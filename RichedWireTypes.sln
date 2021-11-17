@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31829.152
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RichedWireTypes", "RichedWireTypes\RichedWireTypes.csproj", "{34FEDA4F-FC7C-425D-ADC1-5ACF80E06CC3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{34FEDA4F-FC7C-425D-ADC1-5ACF80E06CC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34FEDA4F-FC7C-425D-ADC1-5ACF80E06CC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34FEDA4F-FC7C-425D-ADC1-5ACF80E06CC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34FEDA4F-FC7C-425D-ADC1-5ACF80E06CC3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {10C36921-2966-42AA-A957-05BDB00897FF}
+	EndGlobalSection
+EndGlobal
