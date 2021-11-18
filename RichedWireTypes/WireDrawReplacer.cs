@@ -8,28 +8,206 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace RichedWireTypes
 {
+    public enum WireTypes
+    {
+        Bezier,
+        Line,
+        Polyline,
+    }
     internal abstract class WireDrawReplacer : GH_Painter
     {
+        private static readonly MethodInfo generatePen = typeof(GH_Painter).GetRuntimeMethods().Where(m => m.Name.Contains("GenerateWirePen")).First();
+
         protected WireDrawReplacer(GH_Canvas owner) : base(owner)
         {
         }
 
-        public static GraphicsPath NewConnectionPath(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
+        public void NewDrawConnection(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB, bool selectedA, bool selectedB, GH_WireType type)
         {
-            //BezierF bezierF = ((directionA != 0) ? ConnectionPathBezier(pointA, pointB).Reverse() : ConnectionPathBezier(pointB, pointA));
-            GraphicsPath graphicsPath = new GraphicsPath();
-            graphicsPath.AddLine(pointA, pointB);
-            return graphicsPath;
+
+            if (ConnectionVisible(pointA, pointB))
+            {
+                GraphicsPath graphicsPath;
+
+                switch ((WireTypes)Grasshopper.Instances.Settings.GetValue(MenuCreator._wiretype, (int)MenuCreator._wiretypeDefault))
+                {
+                    default:
+                        graphicsPath = new GraphicsPath();
+                        graphicsPath.AddLine(pointB, pointA);
+                        break;
+
+                    case WireTypes.Bezier:
+                        graphicsPath = ConnectionPath(pointA, pointB, directionA, directionB);
+                        break;
+
+                    case WireTypes.Line:
+                        graphicsPath = ConnectLine(pointA, pointB, directionA, directionB, (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._lineExtend, MenuCreator._lineExtendDefault),
+                           (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._lineRadius, MenuCreator._lineRadiusDefault));
+                        break;
+
+                    case WireTypes.Polyline:
+                        graphicsPath = ConnectPolyline(pointA, pointB, directionA, directionB);
+                        break;
+
+                }
+                Pen pen = (Pen)generatePen.Invoke(this, new object[] { pointA, pointB, selectedA, selectedB, type });
+                if(pen == null)
+                {
+                    pen = new Pen(Color.Black);
+                }
+                pen.Width = pen.Width * (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._wireWidth, MenuCreator._wireWidthDefault);
+                try
+                {
+                    Grasshopper.Instances.ActiveCanvas.Graphics.DrawPath(pen, graphicsPath);
+                }
+                catch 
+                {
+                }
+                graphicsPath.Dispose();
+                pen.Dispose();
+            }
+        }
+
+        private GraphicsPath ConnectLine(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB, float distance, float radius, bool isTrim = false)
+        {
+            PointF pointRight, pointLeft;
+            if (directionA != GH_WireDirection.left)
+            {
+                pointRight = pointA;
+                pointLeft = pointB;
+            }
+            else
+            {
+                pointRight = pointB;
+                pointLeft = pointA;
+            }
+
+            GraphicsPath path = new GraphicsPath();
+
+            if(pointRight.Y == pointLeft.Y)
+            {
+                path.AddLine(pointRight, pointLeft);
+            }
+            else
+            {
+                PointF pointRightM = new PointF(pointRight.X + distance, pointRight.Y);
+                PointF pointLeftM = new PointF(pointLeft.X - distance, pointLeft.Y);
+
+                if(radius < 0)
+                {
+                    path.AddLine(pointRight, pointRightM);
+                    path.AddLine(pointLeftM, pointLeft);
+                }
+                else
+                {
+                    //Change the radius and shrink the polyline.
+                    if (isTrim)
+                    {
+                        PointF CenterDir = new PointF(pointLeftM.X - pointRightM.X, Math.Abs(pointLeftM.Y - pointRightM.Y));
+
+                        double centerDegree = Math.Atan(CenterDir.Y / CenterDir.X);
+                        if (CenterDir.X < 0) centerDegree += Math.PI;
+
+                        float tan = (float)Math.Tan(centerDegree / 2);
+
+                        float halflength = (float)Math.Sqrt(Math.Pow(CenterDir.X, 2) + Math.Pow(CenterDir.Y, 2)) / 2;
+                        float shouldRadius = (float)Math.Min(radius, halflength / tan - 0.001f);
+                        float shouldShrink = tan * shouldRadius;
+
+                        float shrink = shouldShrink;
+                        if (shouldShrink > distance)
+                        {
+                            pointRightM = new PointF(pointRightM.X - distance, pointRightM.Y);
+                            pointLeftM = new PointF(pointLeftM.X + distance, pointLeftM.Y);
+
+                            double u = Math.Abs(pointRightM.X - pointLeftM.X);
+                            double v = Math.Abs(pointRightM.Y - pointLeftM.Y);
+
+                            float _maxRadius = (float)((Math.Pow(u, 2) + Math.Pow(v, 2)) / v / 4) - 0.001f;
+
+                            radius = Math.Min(radius, _maxRadius);
+                        }
+                        else
+                        {
+                            pointRightM = new PointF(pointRightM.X - shrink, pointRightM.Y);
+                            pointLeftM = new PointF(pointLeftM.X + shrink, pointLeftM.Y);
+
+                            radius = shouldRadius - 0.001f;
+                        }
+
+                    }
+                    else
+                    {
+                        double u = Math.Abs(pointRightM.X - pointLeftM.X);
+                        double v = Math.Abs(pointRightM.Y - pointLeftM.Y);
+
+                        float maxRadius = (float)((Math.Pow(u, 2) + Math.Pow(v, 2)) / v / 4) - 0.001f;
+
+                        radius = Math.Min(radius, maxRadius);
+                    }
+
+                    path.AddLine(pointRight, pointRightM);
+
+                    if(radius > 0)
+                    {
+                        if (pointRight.Y > pointLeft.Y)
+                        {
+                            PointF RightCenter = new PointF(pointRightM.X, pointRightM.Y - radius);
+                            PointF LeftCenter = new PointF(pointLeftM.X, pointLeftM.Y + radius);
+                            PointF CenterDir = new PointF(LeftCenter.X - RightCenter.X, LeftCenter.Y - RightCenter.Y);
+
+                            double centerDegree = -Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
+                            if (CenterDir.X < 0) centerDegree += 180;
+
+                            double additionalDegree = Rhino.RhinoMath.ToDegrees(Math.Asin(2 * radius / Math.Sqrt(Math.Pow(CenterDir.X, 2) + Math.Pow(CenterDir.Y, 2))));
+
+                            float round = (float)(centerDegree + additionalDegree);
+
+                            path.AddArc(pointRightM.X - radius, pointRightM.Y - 2 * radius, 2 * radius, 2 * radius, 90, -round);
+                            path.AddArc(pointLeftM.X - radius, pointLeftM.Y, 2 * radius, 2 * radius, -90 - round, round);
+                        }
+                        else if (pointRight.Y < pointLeft.Y)
+                        {
+                            PointF RightCenter = new PointF(pointRightM.X, pointRightM.Y + radius);
+                            PointF LeftCenter = new PointF(pointLeftM.X, pointLeftM.Y - radius);
+                            PointF CenterDir = new PointF(LeftCenter.X - RightCenter.X, LeftCenter.Y - RightCenter.Y);
+
+                            double centerDegree = Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
+                            if (CenterDir.X < 0) centerDegree += 180;
+
+                            double additionalDegree = Rhino.RhinoMath.ToDegrees(Math.Asin(2 * radius / Math.Sqrt(Math.Pow(CenterDir.X, 2) + Math.Pow(CenterDir.Y, 2))));
+
+                            float round = (float)(centerDegree + additionalDegree);
+
+                            path.AddArc(pointRightM.X - radius, pointRightM.Y, 2 * radius, 2 * radius, -90, round);
+                            path.AddArc(pointLeftM.X - radius, pointLeftM.Y - 2 * radius, 2 * radius, 2 * radius, 90 + round, -round);
+                        }
+                    }
+
+                    path.AddLine(pointLeftM, pointLeft);
+                }
+            }
+
+            if (directionA != GH_WireDirection.left) path.Reverse();
+            return path;
+        }
+
+        private GraphicsPath ConnectPolyline(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
+        {
+            float distance = Math.Abs(pointB.X - pointA.X) * (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._polylineMulty, MenuCreator._polylineMultyDefault);
+            float radius = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._polylineRadius, MenuCreator._polylineRadiusDefault);
+            return ConnectLine(pointA, pointB, directionA, directionB, distance, radius, true);
         }
 
         public static bool Init()
         {
             return ExchangeMethod(
-                typeof(GH_Painter).GetRuntimeMethods().Where(m => m.Name.Contains("ConnectionPath")).First(),
-                typeof(WireDrawReplacer).GetRuntimeMethods().Where(m => m.Name.Contains("NewConnectionPath")).First()
+                typeof(GH_Painter).GetRuntimeMethods().Where(m => m.Name.Contains("DrawConnection")).First(),
+                typeof(WireDrawReplacer).GetRuntimeMethods().Where(m => m.Name.Contains("NewDrawConnection")).First()
                 );
         }
 

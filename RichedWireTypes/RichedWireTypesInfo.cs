@@ -10,10 +10,10 @@ namespace RichedWireTypes
 {
     public class RichedWireTypesInfo : GH_AssemblyInfo
     {
-        public override string Name => "RichedWireTypes";
+        public override string Name => "Riched Wire Types";
 
         //Return a 24x24 pixel bitmap to represent this GHA library.
-        public override Bitmap Icon => null;
+        public override Bitmap Icon => Properties.Resources.RichedWireTypesIcons_24;
 
         //Return a short string describing the purpose of this GHA library.
         public override string Description => "Provide a set of wire types such as Polyline.";
@@ -66,6 +66,14 @@ namespace RichedWireTypes
 
         private void DoingSomethingFirst(GH_DocumentEditor editor)
         {
+            var menu = editor.MainMenuStrip.Items.Find("mnuDisplay", false);
+            if (menu.Length != 0)
+            {
+                var items = ((ToolStripMenuItem)menu[0]).DropDownItems;
+                //if (items.Find("Sunglasses", false).Length == 0)
+                    items.Insert(3, MenuCreator.CreateMajorMenu());
+            }
+
             WireDrawReplacer.Init();
         }
     }
