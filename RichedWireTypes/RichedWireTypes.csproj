@@ -9,6 +9,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageIcon>RichedWireTypesIcons_128.png</PackageIcon>
+    <Authors>秋水</Authors>
   </PropertyGroup>
   
   <ItemGroup>

@@ -88,7 +88,7 @@ namespace RichedWireTypes
 
             GraphicsPath path = new GraphicsPath();
 
-            if(pointRight.Y == pointLeft.Y)
+            if(pointRight.Y == pointLeft.Y && pointRight.X < pointLeft.X)
             {
                 path.AddLine(pointRight, pointLeft);
             }
@@ -107,60 +107,65 @@ namespace RichedWireTypes
                     //Change the radius and shrink the polyline.
                     if (isTrim)
                     {
-                        PointF CenterDir = new PointF(pointLeftM.X - pointRightM.X, Math.Abs(pointLeftM.Y - pointRightM.Y));
 
-                        double centerDegree = Math.Atan(CenterDir.Y / CenterDir.X);
-                        if (CenterDir.X < 0) centerDegree += Math.PI;
+                        //Distance that line end extend added.
+                        float extendedDistance = distance - (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._polylineExtend, MenuCreator._polylineExtendDefault);
 
-                        float tan = (float)Math.Tan(centerDegree / 2);
-
-                        float halflength = (float)Math.Sqrt(Math.Pow(CenterDir.X, 2) + Math.Pow(CenterDir.Y, 2)) / 2;
-                        float shouldRadius = (float)Math.Min(radius, halflength / tan - 0.001f);
-                        float shouldShrink = tan * shouldRadius;
-
-                        float shrink = shouldShrink;
-                        if (shouldShrink > distance)
+                        if (pointLeftM.Y == pointRightM.Y)
                         {
-                            pointRightM = new PointF(pointRightM.X - distance, pointRightM.Y);
-                            pointLeftM = new PointF(pointLeftM.X + distance, pointLeftM.Y);
+                            pointRightM = new PointF(pointRightM.X - extendedDistance, pointRightM.Y);
+                            pointLeftM = new PointF(pointLeftM.X + extendedDistance, pointLeftM.Y);
 
-                            double u = Math.Abs(pointRightM.X - pointLeftM.X);
-                            double v = Math.Abs(pointRightM.Y - pointLeftM.Y);
-
-                            float _maxRadius = (float)((Math.Pow(u, 2) + Math.Pow(v, 2)) / v / 4) - 0.001f;
-
-                            radius = Math.Min(radius, _maxRadius);
+                            radius = Math.Min(radius, GetMaxRadius(pointRightM, pointLeftM));
                         }
                         else
                         {
-                            pointRightM = new PointF(pointRightM.X - shrink, pointRightM.Y);
-                            pointLeftM = new PointF(pointLeftM.X + shrink, pointLeftM.Y);
+                            PointF CenterDir = new PointF(pointLeftM.X - pointRightM.X, Math.Abs(pointLeftM.Y - pointRightM.Y));
 
-                            radius = shouldRadius - 0.001f;
+                            double centerDegree = Math.Atan(CenterDir.Y / CenterDir.X);
+                            if (CenterDir.X < 0) centerDegree += Math.PI;
+
+                            //Get Radius and Shrink by pitch's distance.
+                            float tan = (float)Math.Tan(centerDegree / 2);
+                            float halflength = (float)Math.Sqrt(Math.Pow(CenterDir.X, 2) + Math.Pow(CenterDir.Y, 2)) / 2;
+                            float shouldRadius = (float)Math.Min(radius, halflength / tan - 0.001f);
+                            float shouldShrink = tan * shouldRadius;
+
+
+                            if (shouldShrink > extendedDistance)
+                            {
+                                pointRightM = new PointF(pointRightM.X - extendedDistance, pointRightM.Y);
+                                pointLeftM = new PointF(pointLeftM.X + extendedDistance, pointLeftM.Y);
+
+                                radius = Math.Min(radius, GetMaxRadius(pointRightM, pointLeftM));
+                            }
+                            else
+                            {
+                                pointRightM = new PointF(pointRightM.X - shouldShrink, pointRightM.Y);
+                                pointLeftM = new PointF(pointLeftM.X + shouldShrink, pointLeftM.Y);
+
+                                radius = shouldRadius - 0.001f;
+                            }
                         }
 
                     }
                     else
                     {
-                        double u = Math.Abs(pointRightM.X - pointLeftM.X);
-                        double v = Math.Abs(pointRightM.Y - pointLeftM.Y);
 
-                        float maxRadius = (float)((Math.Pow(u, 2) + Math.Pow(v, 2)) / v / 4) - 0.001f;
-
-                        radius = Math.Min(radius, maxRadius);
+                        radius = Math.Min(radius, GetMaxRadius(pointRightM, pointLeftM));
                     }
 
                     path.AddLine(pointRight, pointRightM);
 
                     if(radius > 0)
                     {
-                        if (pointRight.Y > pointLeft.Y)
+                        if (pointRight.Y >= pointLeft.Y)
                         {
                             PointF RightCenter = new PointF(pointRightM.X, pointRightM.Y - radius);
                             PointF LeftCenter = new PointF(pointLeftM.X, pointLeftM.Y + radius);
                             PointF CenterDir = new PointF(LeftCenter.X - RightCenter.X, LeftCenter.Y - RightCenter.Y);
 
-                            double centerDegree = -Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
+                            double centerDegree = - Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
                             if (CenterDir.X < 0) centerDegree += 180;
 
                             double additionalDegree = Rhino.RhinoMath.ToDegrees(Math.Asin(2 * radius / Math.Sqrt(Math.Pow(CenterDir.X, 2) + Math.Pow(CenterDir.Y, 2))));
@@ -170,7 +175,7 @@ namespace RichedWireTypes
                             path.AddArc(pointRightM.X - radius, pointRightM.Y - 2 * radius, 2 * radius, 2 * radius, 90, -round);
                             path.AddArc(pointLeftM.X - radius, pointLeftM.Y, 2 * radius, 2 * radius, -90 - round, round);
                         }
-                        else if (pointRight.Y < pointLeft.Y)
+                        else
                         {
                             PointF RightCenter = new PointF(pointRightM.X, pointRightM.Y + radius);
                             PointF LeftCenter = new PointF(pointLeftM.X, pointLeftM.Y - radius);
@@ -194,6 +199,14 @@ namespace RichedWireTypes
 
             if (directionA != GH_WireDirection.left) path.Reverse();
             return path;
+        }
+
+        private float GetMaxRadius(PointF pointRight, PointF pointLeft)
+        {
+            double u = Math.Abs(pointRight.X - pointLeft.X);
+            double v = Math.Abs(pointRight.Y - pointLeft.Y);
+
+            return (float)((Math.Pow(u, 2) + Math.Pow(v, 2)) / v / 4) - 0.001f;
         }
 
         private GraphicsPath ConnectPolyline(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)

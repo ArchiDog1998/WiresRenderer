@@ -22,6 +22,9 @@ namespace RichedWireTypes
         internal static readonly string _lineRadius = "LineRadius";
         internal static readonly double _lineRadiusDefault = 5;
 
+        internal static readonly string _polylineExtend = "PolylineExtend";
+        internal static readonly double _polylineExtendDefault = 2.5;
+
         internal static readonly string _polylineMulty = "PolylineMulty";
         internal static readonly double _polylineMultyDefault = 0.3;
 
@@ -38,7 +41,7 @@ namespace RichedWireTypes
                 CreateWireType()
             })
             { ToolTipText = "Change wire type or change wire width."};
-            CreateNumberBox(major, "Wire Width", _wireWidth, _wireWidthDefault, 10, 0.001);
+            CreateNumberBox(major, "Multiple of Wire Width", _wireWidth, _wireWidthDefault, 10, 0.001);
 
             return major;
         }
@@ -96,6 +99,8 @@ namespace RichedWireTypes
                 Checked = isOn,
             };
 
+            CreateNumberBox(major, "End Extend Length", _polylineExtend, _polylineExtendDefault, 100, 0);
+            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
             CreateNumberBox(major, "Multiple of Corner Pitch", _polylineMulty, _polylineMultyDefault, 0.5, 0);
             GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
             CreateNumberBox(major, "Corner Radius", _polylineRadius, _polylineRadiusDefault, 100, 0);
@@ -118,6 +123,9 @@ namespace RichedWireTypes
 
         public static void CreateNumberBox(ToolStripMenuItem item, string itemName, string valueName, double valueDefault, double Max, double Min)
         {
+            item.DropDown.Closing -= DropDown_Closing;
+            item.DropDown.Closing += DropDown_Closing;
+
             ToolStripLabel textBox = new ToolStripLabel(itemName);
             textBox.Font = new Font(textBox.Font.FontFamily, textBox.Font.Size, FontStyle.Bold);
             textBox.ToolTipText = $"Value from {Min} to {Max}";
@@ -150,7 +158,8 @@ namespace RichedWireTypes
             GH_DocumentObject.Menu_AppendCustomItem(item.DropDown, slider);
 
             //Add a Reset Item.
-            ToolStripMenuItem resetItem = new ToolStripMenuItem("Reset Value");
+            ToolStripMenuItem resetItem = new ToolStripMenuItem("Reset Value", Properties.Resources.ResetIcons_24);
+
             resetItem.Click += ResetItem_Click;
             void ResetItem_Click(object sender, EventArgs e)
             {
@@ -161,5 +170,9 @@ namespace RichedWireTypes
             item.DropDownItems.Add(resetItem);
         }
 
+        private static void DropDown_Closing(object sender, ToolStripDropDownClosingEventArgs e)
+        {
+            e.Cancel = e.CloseReason == ToolStripDropDownCloseReason.ItemClicked;
+        }
     }
 }
