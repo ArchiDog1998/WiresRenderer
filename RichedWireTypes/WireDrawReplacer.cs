@@ -18,9 +18,9 @@ namespace RichedWireTypes
         Line,
         Polyline,
     }
-    internal abstract class WireDrawReplacer : GH_Painter
+    internal class WireDrawReplacer : GH_Painter
     {
-        private static readonly MethodInfo generatePen = typeof(GH_Painter).GetRuntimeMethods().Where(m => m.Name.Contains("GenerateWirePen")).First();
+        private static MethodInfo generatePen = typeof(GH_Painter).GetRuntimeMethods().Where(m => m.Name.Contains("GenerateWirePen")).First();
 
         protected WireDrawReplacer(GH_Canvas owner) : base(owner)
         {
@@ -54,22 +54,29 @@ namespace RichedWireTypes
                         break;
 
                 }
-                Pen pen = (Pen)generatePen.Invoke(this, new object[] { pointA, pointB, selectedA, selectedB, type });
-                if(pen == null)
-                {
-                    pen = new Pen(Color.Black);
-                }
-                pen.Width = pen.Width * (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._wireWidth, MenuCreator._wireWidthDefault);
+                Pen pen = GetPen(pointA, pointB, selectedA, selectedB, type);
                 try
                 {
                     Grasshopper.Instances.ActiveCanvas.Graphics.DrawPath(pen, graphicsPath);
                 }
-                catch 
+                catch
                 {
                 }
                 graphicsPath.Dispose();
                 pen.Dispose();
             }
+        }
+
+        private Pen GetPen(PointF a, PointF b, bool asel, bool bsel, GH_WireType wiretype)
+        {
+
+            Pen pen = (Pen)generatePen.Invoke(this, new object[] { a, b, asel, bsel, wiretype });
+            if (pen == null)
+            {
+                pen = new Pen(Color.Black);
+            }
+            pen.Width = pen.Width * (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._wireWidth, MenuCreator._wireWidthDefault);
+            return pen;
         }
 
         private GraphicsPath ConnectLine(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB, float distance, float radius, bool isTrim = false)

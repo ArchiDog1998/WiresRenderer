@@ -1,5 +1,6 @@
 ﻿using Grasshopper.GUI;
 using Grasshopper.GUI.Base;
+using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using System;
 using System.Collections.Generic;
@@ -38,10 +39,41 @@ namespace RichedWireTypes
         {
             ToolStripMenuItem major = new ToolStripMenuItem("Riched Wire Types", Properties.Resources.RichedWireTypesIcons_24, new ToolStripItem[]
             {
-                CreateWireType()
-            })
-            { ToolTipText = "Change wire type or change wire width."};
+                CreateWireType(), CreateWireDefaultColor(), CreateWireSelectedColor()
+            }) { ToolTipText = "Change wire type or change wire width."};
             CreateNumberBox(major, "Multiple of Wire Width", _wireWidth, _wireWidthDefault, 10, 0.001);
+
+            return major;
+        }
+        private static ToolStripMenuItem CreateWireDefaultColor()
+        {
+            ToolStripMenuItem major = new ToolStripMenuItem("Wire Default Color") { ToolTipText = "Change wire default color and empty color." };
+
+            CreateColor(major, "Default Color", GH_Skin.wire_default, Color.FromArgb(150, 0, 0, 0), (color) => GH_Skin.wire_default = color);
+            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+            CreateColor(major, "Empty Color", GH_Skin.wire_empty, Color.FromArgb(180, 255, 60, 0), (color) => GH_Skin.wire_empty = color);
+
+
+            return major;
+        }
+
+        private static ToolStripMenuItem CreateWireSelectedColor()
+        {
+            ToolStripMenuItem major = new ToolStripMenuItem("Wire Selected Color") { ToolTipText = "Change wire selected a color and selected b color." };
+
+            GH_ColourPicker pickerA = CreateColor(major, "Selected A Color", GH_Skin.wire_selected_a, Color.FromArgb(255, 125, 210, 40), (color) => GH_Skin.wire_selected_a = color);
+            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+            GH_ColourPicker pickerB = CreateColor(major, "Selected B Color", GH_Skin.wire_selected_b, Color.FromArgb(50, 0, 0, 0), (color) => GH_Skin.wire_selected_b = color);
+
+            ToolStripMenuItem toSameItem = new ToolStripMenuItem("Same To Selected A Color");
+            toSameItem.Click += (sender, e) =>
+            {
+                pickerB.Colour = pickerA.Colour;
+                GH_Skin.wire_selected_b = pickerA.Colour;
+                Grasshopper.Instances.ActiveCanvas.Refresh();
+            };
+            major.DropDownItems.Add(toSameItem);
+
 
             return major;
         }
@@ -121,15 +153,43 @@ namespace RichedWireTypes
             Grasshopper.Instances.ActiveCanvas.Refresh();
         }
 
-        public static void CreateNumberBox(ToolStripMenuItem item, string itemName, string valueName, double valueDefault, double Max, double Min)
+        private static GH_ColourPicker CreateColor(ToolStripMenuItem item, string itemName, Color rightColor, Color defaultColor, Action<Color> changeColor)
         {
             item.DropDown.Closing -= DropDown_Closing;
             item.DropDown.Closing += DropDown_Closing;
 
             ToolStripLabel textBox = new ToolStripLabel(itemName);
             textBox.Font = new Font(textBox.Font.FontFamily, textBox.Font.Size, FontStyle.Bold);
-            textBox.ToolTipText = $"Value from {Min} to {Max}";
+            item.DropDownItems.Add(textBox);
 
+            GH_ColourPicker picker = GH_DocumentObject.Menu_AppendColourPicker(item.DropDown, rightColor , (sender, e) =>
+            {
+                changeColor.Invoke(e.Colour);
+                Grasshopper.Instances.ActiveCanvas.Refresh();
+            });
+
+            //Add a Reset Item.
+            ToolStripMenuItem resetItem = new ToolStripMenuItem("Reset Value", Properties.Resources.ResetIcons_24);
+            resetItem.Click += (sender, e) =>
+            {
+                picker.Colour = defaultColor;
+                changeColor.Invoke(defaultColor);
+                Grasshopper.Instances.ActiveCanvas.Refresh();
+            };
+            item.DropDownItems.Add(resetItem);
+
+            return picker;
+        }
+
+
+        private static void CreateNumberBox(ToolStripMenuItem item, string itemName, string valueName, double valueDefault, double Max, double Min)
+        {
+            item.DropDown.Closing -= DropDown_Closing;
+            item.DropDown.Closing +=  DropDown_Closing;
+
+            ToolStripLabel textBox = new ToolStripLabel(itemName);
+            textBox.Font = new Font(textBox.Font.FontFamily, textBox.Font.Size, FontStyle.Bold);
+            textBox.ToolTipText = $"Value from {Min} to {Max}";
             item.DropDownItems.Add(textBox);
 
             int decimalPlace = 3;
@@ -159,14 +219,12 @@ namespace RichedWireTypes
 
             //Add a Reset Item.
             ToolStripMenuItem resetItem = new ToolStripMenuItem("Reset Value", Properties.Resources.ResetIcons_24);
-
-            resetItem.Click += ResetItem_Click;
-            void ResetItem_Click(object sender, EventArgs e)
+            resetItem.Click += (sender, e) =>
             {
                 Grasshopper.Instances.Settings.SetValue(valueName, valueDefault);
                 slider.Value = (decimal)valueDefault;
                 Grasshopper.Instances.ActiveCanvas.Refresh();
-            }
+            };
             item.DropDownItems.Add(resetItem);
         }
 
