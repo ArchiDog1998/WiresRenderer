@@ -16,7 +16,7 @@ namespace RichedWireTypes
         public override Bitmap Icon => Properties.Resources.RichedWireTypesIcons_24;
 
         //Return a short string describing the purpose of this GHA library.
-        public override string Description => "Provide a set of wire types such as Polyline.";
+        public override string Description => "Provide a set of wire types such as Polyline. Also it can change wire's color and width.";
 
         public override Guid Id => new Guid("2850F61C-B64C-4466-8B9C-D89754AB6ECD");
 
@@ -26,7 +26,7 @@ namespace RichedWireTypes
         //Return a string representing your preferred contact details.
         public override string AuthorContact => "1123993881@qq.com";
 
-        public override string Version => "1.0.0";
+        public override string Version => "1.1.0";
     }
 
     public class SuperHelperAssemblyPriority : GH_AssemblyPriority
