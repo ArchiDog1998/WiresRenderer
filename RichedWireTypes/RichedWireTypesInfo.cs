@@ -66,13 +66,8 @@ namespace RichedWireTypes
 
         private void DoingSomethingFirst(GH_DocumentEditor editor)
         {
-            var menu = editor.MainMenuStrip.Items.Find("mnuDisplay", false);
-            if (menu.Length != 0)
-            {
-                var items = ((ToolStripMenuItem)menu[0]).DropDownItems;
-                items.Insert(3, MenuCreator.CreateMajorMenu());
-            }
-
+            ToolStripMenuItem displayItem = (ToolStripMenuItem)editor.MainMenuStrip.Items[3];
+            displayItem.DropDownItems.Insert(3, MenuCreator.CreateMajorMenu());
             WireDrawReplacer.Init();
         }
     }
