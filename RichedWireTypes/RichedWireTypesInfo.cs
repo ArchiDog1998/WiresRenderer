@@ -70,8 +70,7 @@ namespace RichedWireTypes
             if (menu.Length != 0)
             {
                 var items = ((ToolStripMenuItem)menu[0]).DropDownItems;
-                //if (items.Find("Sunglasses", false).Length == 0)
-                    items.Insert(3, MenuCreator.CreateMajorMenu());
+                items.Insert(3, MenuCreator.CreateMajorMenu());
             }
 
             WireDrawReplacer.Init();
