@@ -1,4 +1,9 @@
-﻿using Grasshopper.GUI.Canvas;
+﻿using Grasshopper.GUI;
+using Grasshopper.GUI.Canvas;
+using Grasshopper.Kernel;
+using Grasshopper.Kernel.Special;
+using Grasshopper.Kernel.Undo;
+using Grasshopper.Kernel.Undo.Actions;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -31,29 +36,7 @@ namespace RichedWireTypes
 
             if (ConnectionVisible(pointA, pointB))
             {
-                GraphicsPath graphicsPath;
-
-                switch ((WireTypes)Grasshopper.Instances.Settings.GetValue(MenuCreator._wiretype, (int)MenuCreator._wiretypeDefault))
-                {
-                    default:
-                        graphicsPath = new GraphicsPath();
-                        graphicsPath.AddLine(pointB, pointA);
-                        break;
-
-                    case WireTypes.Bezier:
-                        graphicsPath = ConnectionPath(pointA, pointB, directionA, directionB);
-                        break;
-
-                    case WireTypes.Line:
-                        graphicsPath = ConnectLine(pointA, pointB, directionA, directionB, (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._lineExtend, MenuCreator._lineExtendDefault),
-                           (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._lineRadius, MenuCreator._lineRadiusDefault));
-                        break;
-
-                    case WireTypes.Polyline:
-                        graphicsPath = ConnectPolyline(pointA, pointB, directionA, directionB);
-                        break;
-
-                }
+                GraphicsPath graphicsPath = GetDrawConnection(pointA, pointB, directionA, directionB);
                 Pen pen = GetPen(pointA, pointB, selectedA, selectedB, type);
                 try
                 {
@@ -65,6 +48,32 @@ namespace RichedWireTypes
                 graphicsPath.Dispose();
                 pen.Dispose();
             }
+        }
+
+        private GraphicsPath GetDrawConnection(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
+        {
+            GraphicsPath graphicsPath;
+            switch ((WireTypes)Grasshopper.Instances.Settings.GetValue(MenuCreator._wiretype, (int)MenuCreator._wiretypeDefault))
+            {
+                default:
+                    graphicsPath = new GraphicsPath();
+                    graphicsPath.AddLine(pointB, pointA);
+                    break;
+
+                case WireTypes.Bezier:
+                    graphicsPath = ConnectionPath(pointA, pointB, directionA, directionB);
+                    break;
+
+                case WireTypes.Line:
+                    graphicsPath = ConnectLine(pointA, pointB, directionA, directionB, (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._lineExtend, MenuCreator._lineExtendDefault),
+                       (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._lineRadius, MenuCreator._lineRadiusDefault));
+                    break;
+
+                case WireTypes.Polyline:
+                    graphicsPath = ConnectPolyline(pointA, pointB, directionA, directionB);
+                    break;
+            }
+            return graphicsPath;
         }
 
         private Pen GetPen(PointF a, PointF b, bool asel, bool bsel, GH_WireType wiretype)
@@ -95,7 +104,7 @@ namespace RichedWireTypes
 
             GraphicsPath path = new GraphicsPath();
 
-            if(pointRight.Y == pointLeft.Y && pointRight.X < pointLeft.X)
+            if (pointRight.Y == pointLeft.Y && pointRight.X < pointLeft.X)
             {
                 path.AddLine(pointRight, pointLeft);
             }
@@ -104,7 +113,7 @@ namespace RichedWireTypes
                 PointF pointRightM = new PointF(pointRight.X + distance, pointRight.Y);
                 PointF pointLeftM = new PointF(pointLeft.X - distance, pointLeft.Y);
 
-                if(radius < 0)
+                if (radius < 0)
                 {
                     path.AddLine(pointRight, pointRightM);
                     path.AddLine(pointLeftM, pointLeft);
@@ -164,7 +173,7 @@ namespace RichedWireTypes
 
                     path.AddLine(pointRight, pointRightM);
 
-                    if(radius > 0)
+                    if (radius > 0)
                     {
                         if (pointRight.Y >= pointLeft.Y)
                         {
@@ -172,7 +181,7 @@ namespace RichedWireTypes
                             PointF LeftCenter = new PointF(pointLeftM.X, pointLeftM.Y + radius);
                             PointF CenterDir = new PointF(LeftCenter.X - RightCenter.X, LeftCenter.Y - RightCenter.Y);
 
-                            double centerDegree = - Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
+                            double centerDegree = -Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
                             if (CenterDir.X < 0) centerDegree += 180;
 
                             double additionalDegree = Rhino.RhinoMath.ToDegrees(Math.Asin(2 * radius / Math.Sqrt(Math.Pow(CenterDir.X, 2) + Math.Pow(CenterDir.Y, 2))));
@@ -223,12 +232,79 @@ namespace RichedWireTypes
             return ConnectLine(pointA, pointB, directionA, directionB, distance, radius, true);
         }
 
+        private float DistanceToWireNew(PointF locus, float radius, PointF source, PointF target)
+        {
+            GraphicsPath graphicsPath = GetDrawConnection(source, target, GH_WireDirection.right, GH_WireDirection.left);
+            graphicsPath.Flatten();
+            PointF[] points = graphicsPath.PathPoints;
+            float min = float.MaxValue;
+            for (int i = 0; i < points.Length - 1; i++)
+            {
+                min = Math.Min(min, pointToLine(points[i], points[i + 1], locus));
+            }
+            return min;
+        }
+
+        private static float distance(PointF p, PointF p1)
+        {
+            return (float)Math.Sqrt(Math.Pow(p.X - p1.X, 2) + Math.Pow(p.Y - p1.Y, 2));
+        }
+        private static float pointToLine(PointF p1, PointF p2, PointF p)
+        {
+            float a, b, c;
+            a = distance(p1, p2);
+            b = distance(p1, p);
+            c = distance(p2, p);
+            if (c + b == a)
+            {
+                return 0;
+            }
+            if (a <= 0.00001)
+            {
+                return b;
+            }
+            if (c * c >= a * a + b * b)
+            {
+                return b;
+            }
+            if (b * b >= a * a + c * c)
+            {
+                return c;
+            }
+            float p0 = (a + b + c) / 2;
+            float s = (float)Math.Sqrt(p0 * (p0 - a) * (p0 - b) * (p0 - c));
+            return 2 * s / a;
+        }
+
+
         public static bool Init()
         {
-            return ExchangeMethod(
+            ExchangeMethod(
                 typeof(GH_Painter).GetRuntimeMethods().Where(m => m.Name.Contains("DrawConnection")).First(),
                 typeof(WireDrawReplacer).GetRuntimeMethods().Where(m => m.Name.Contains("NewDrawConnection")).First()
                 );
+            ExchangeMethod(
+                typeof(GH_Document).GetRuntimeMethods().Where(m => m.Name.Contains("DistanceToWire")).First(),
+                typeof(WireDrawReplacer).GetRuntimeMethods().Where(m => m.Name.Contains("DistanceToWireNew")).First()
+                );
+            Grasshopper.Instances.ActiveCanvas.Document_ObjectsAdded += ActiveCanvas_Document_ObjectsAdded;
+            return true;
+        }
+
+        private static void ActiveCanvas_Document_ObjectsAdded(GH_Document sender, GH_DocObjectEventArgs e)
+        {
+            if (e.ObjectCount != 1) return;
+            IGH_DocumentObject obj = e.Objects[0];
+            if (!(obj is GH_Relay)) return;
+
+            sender.ScheduleSolution(50, (doc) =>
+            {
+                if (((GH_Relay)obj).SourceCount == 0) return;
+
+                Point pointOnCanvas = Grasshopper.Instances.ActiveCanvas.PointToClient(Control.MousePosition);
+                PointF pointOnDocument = Grasshopper.Instances.ActiveCanvas.Viewport.UnprojectPoint(pointOnCanvas);
+                obj.Attributes.Pivot = pointOnDocument;
+            });
         }
 
         private static bool ExchangeMethod(MethodInfo targetMethod, MethodInfo injectMethod)
