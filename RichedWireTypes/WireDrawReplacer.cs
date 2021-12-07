@@ -305,7 +305,7 @@ namespace RichedWireTypes
         private static void ActiveCanvas_CanvasPaintBegin(GH_Canvas sender)
         {
             List<IGH_TagArtist> tags = (List<IGH_TagArtist>)artTags.GetValue(sender);
-            if (tags.Count == 0) return;
+            if (tags == null ||tags.Count == 0) return;
 
             for (int i = 0; i < tags.Count; i++)
             {
