@@ -188,6 +188,7 @@ namespace RichedWireTypes
             item.DropDown.Closing +=  DropDown_Closing;
 
             ToolStripLabel textBox = new ToolStripLabel(itemName);
+            textBox.TextAlign = ContentAlignment.MiddleCenter;
             textBox.Font = new Font(textBox.Font.FontFamily, textBox.Font.Size, FontStyle.Bold);
             textBox.ToolTipText = $"Value from {Min} to {Max}";
             item.DropDownItems.Add(textBox);

@@ -1,7 +1,9 @@
 ﻿using Grasshopper.GUI;
 using Grasshopper.GUI.Canvas;
+using Grasshopper.GUI.Canvas.TagArtists;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Special;
+using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Undo;
 using Grasshopper.Kernel.Undo.Actions;
 using System;
@@ -26,6 +28,7 @@ namespace RichedWireTypes
     internal class WireDrawReplacer : GH_Painter
     {
         private static MethodInfo generatePen = typeof(GH_Painter).GetRuntimeMethods().Where(m => m.Name.Contains("GenerateWirePen")).First();
+        private static FieldInfo artTags = typeof(GH_Canvas).GetRuntimeFields().Where(m => m.Name.Contains("_artists")).First();
 
         protected WireDrawReplacer(GH_Canvas owner) : base(owner)
         {
@@ -50,7 +53,7 @@ namespace RichedWireTypes
             }
         }
 
-        private GraphicsPath GetDrawConnection(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
+        public static GraphicsPath GetDrawConnection(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
         {
             GraphicsPath graphicsPath;
             switch ((WireTypes)Grasshopper.Instances.Settings.GetValue(MenuCreator._wiretype, (int)MenuCreator._wiretypeDefault))
@@ -62,6 +65,7 @@ namespace RichedWireTypes
 
                 case WireTypes.Bezier:
                     graphicsPath = ConnectionPath(pointA, pointB, directionA, directionB);
+
                     break;
 
                 case WireTypes.Line:
@@ -88,7 +92,7 @@ namespace RichedWireTypes
             return pen;
         }
 
-        private GraphicsPath ConnectLine(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB, float distance, float radius, bool isTrim = false)
+        private static GraphicsPath ConnectLine(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB, float distance, float radius, bool isTrim = false)
         {
             PointF pointRight, pointLeft;
             if (directionA != GH_WireDirection.left)
@@ -217,7 +221,7 @@ namespace RichedWireTypes
             return path;
         }
 
-        private float GetMaxRadius(PointF pointRight, PointF pointLeft)
+        private static float GetMaxRadius(PointF pointRight, PointF pointLeft)
         {
             double u = Math.Abs(pointRight.X - pointLeft.X);
             double v = Math.Abs(pointRight.Y - pointLeft.Y);
@@ -225,7 +229,7 @@ namespace RichedWireTypes
             return (float)((Math.Pow(u, 2) + Math.Pow(v, 2)) / v / 4) - 0.001f;
         }
 
-        private GraphicsPath ConnectPolyline(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
+        private static GraphicsPath ConnectPolyline(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
         {
             float distance = Math.Abs(pointB.X - pointA.X) * (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._polylineMulty, MenuCreator._polylineMultyDefault);
             float radius = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._polylineRadius, MenuCreator._polylineRadiusDefault);
@@ -287,8 +291,30 @@ namespace RichedWireTypes
                 typeof(GH_Document).GetRuntimeMethods().Where(m => m.Name.Contains("DistanceToWire")).First(),
                 typeof(WireDrawReplacer).GetRuntimeMethods().Where(m => m.Name.Contains("DistanceToWireNew")).First()
                 );
+
+            ExchangeMethod(
+                typeof(GH_DocumentObject).GetRuntimeMethods().Where(m => m.Name.Contains("Menu_AppendPublish")).First(),
+                typeof(AdditionMenu).GetRuntimeMethods().Where(m => m.Name.Contains("Menu_AppendPublishNew")).First()
+                );
+
             Grasshopper.Instances.ActiveCanvas.Document_ObjectsAdded += ActiveCanvas_Document_ObjectsAdded;
+            Grasshopper.Instances.ActiveCanvas.CanvasPaintBegin += ActiveCanvas_CanvasPaintBegin;
             return true;
+        }
+
+        private static void ActiveCanvas_CanvasPaintBegin(GH_Canvas sender)
+        {
+            List<IGH_TagArtist> tags = (List<IGH_TagArtist>)artTags.GetValue(sender);
+            if (tags.Count == 0) return;
+
+            for (int i = 0; i < tags.Count; i++)
+            {
+                if (tags[i] is GH_TagArtist_WirePainter && !(tags[i] is NewTag))
+                {
+                    tags[i] = new NewTag((GH_TagArtist_WirePainter)tags[i]);
+                }
+            }
+            artTags.SetValue(sender, tags);
         }
 
         private static void ActiveCanvas_Document_ObjectsAdded(GH_Document sender, GH_DocObjectEventArgs e)
