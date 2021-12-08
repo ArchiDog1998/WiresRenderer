@@ -19,7 +19,7 @@ namespace RichedWireTypes
     internal abstract class AdditionMenu : GH_ActiveObject
 	{
         private static readonly MethodInfo _publishClick = typeof(GH_DocumentObject).GetRuntimeMethods().Where(m => m.Name.Contains("Menu_PublishObjectClick")).First();
-
+        private static bool _isJump = false;
         protected AdditionMenu(IGH_InstanceDescription tag) : base(tag)
         {
 
@@ -101,10 +101,13 @@ namespace RichedWireTypes
 
         private void Menu_JumpClicked(object sender, EventArgs e)
         {
-            Instances.ActiveCanvas.RemoveTagArtist(GH_TagArtist_WirePainter.WirePainter_ID);
+            _isJump = true;
+            int jumpTime = 500;
+            int WaitTime = 500;
+
             IGH_Param target = (IGH_Param)((ToolStripMenuItem)sender).Tag;
 
-            GH_Canvas canvas = Grasshopper.Instances.ActiveCanvas;
+            GH_Canvas canvas = Instances.ActiveCanvas;
             float width = canvas.Viewport.MidPoint.X - this.Attributes.Pivot.X;
             float height = canvas.Viewport.MidPoint.Y - this.Attributes.Pivot.Y;
             double num = GH_GraphicsUtil.Distance(this.Attributes.Pivot, target.Attributes.Pivot);
@@ -120,15 +123,27 @@ namespace RichedWireTypes
             aimViewPort.Type = GH_NamedViewType.center;
             aimViewPort.Zoom = canvas.Viewport.Zoom;
 
-            zoomView.SetToViewport(canvas, 500);
-            canvas.Document.ScheduleSolution(500, (doc) =>
+            //Change Selected.
+            Instances.ActiveCanvas.Document.DeselectAll();
+            target.Attributes.Selected = true;
+
+            //Doing some jump.
+            zoomView.SetToViewport(canvas, jumpTime);
+            canvas.Document.ScheduleSolution(WaitTime, (doc) =>
             {
-                aimViewPort.SetToViewport(canvas, 500);
+                aimViewPort.SetToViewport(canvas, jumpTime);
+                canvas.Document.ScheduleSolution(WaitTime, (doc2) =>
+                {
+                    Instances.ActiveCanvas.RemoveTagArtist(GH_TagArtist_WirePainter.WirePainter_ID);
+                    _isJump = false;
+                });
             });
+
         }
 
         private void Menu_JumpMouseLeave(object sender, EventArgs e)
         {
+            if (_isJump) return;
             Instances.ActiveCanvas.RemoveTagArtist(GH_TagArtist_WirePainter.WirePainter_ID);
             Instances.InvalidateCanvas();
         }

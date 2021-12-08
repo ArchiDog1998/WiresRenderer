@@ -1,0 +1,24 @@
+---
+name: RichedWireType
+version: 1.3.0
+authors:
+- 秋水
+description: > 
+  Provide two additional wire type called line wire type and polyline wire type. Also it can change wire's width and colors.
+  
+  
+  1.3.0 Notes:
+  
+  1. Fix bug that disconnects wire display not right.
+  
+  2. Add a Jump to feature in param's right click.
+url: https://www.food4rhino.com/app/riched-wire-types
+keywords:
+- wire
+- connect
+- line
+- type
+- thickness
+- width
+icon_url: "https://static.food4rhino.com/s3fs-public/styles/thumbnail/public/users-files/qiu-shui/app/richedwiretypesicons256.png"
+
