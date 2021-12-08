@@ -138,7 +138,6 @@ namespace RichedWireTypes
                     _isJump = false;
                 });
             });
-
         }
 
         private void Menu_JumpMouseLeave(object sender, EventArgs e)
