@@ -19,12 +19,7 @@ using System.Windows.Forms;
 
 namespace RichedWireTypes
 {
-    public enum WireTypes
-    {
-        Bezier,
-        Line,
-        Polyline,
-    }
+
     internal class WireDrawReplacer : GH_Painter
     {
         private static MethodInfo generatePen = typeof(GH_Painter).GetRuntimeMethods().Where(m => m.Name.Contains("GenerateWirePen")).First();
@@ -56,24 +51,24 @@ namespace RichedWireTypes
         public static GraphicsPath GetDrawConnection(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
         {
             GraphicsPath graphicsPath;
-            switch ((WireTypes)Grasshopper.Instances.Settings.GetValue(MenuCreator._wiretype, (int)MenuCreator._wiretypeDefault))
+            switch ((Wire_Types)Grasshopper.Instances.Settings.GetValue(MenuCreator._wiretype, (int)MenuCreator._wiretypeDefault))
             {
                 default:
                     graphicsPath = new GraphicsPath();
                     graphicsPath.AddLine(pointB, pointA);
                     break;
 
-                case WireTypes.Bezier:
+                case Wire_Types.Bezier_Wire:
                     graphicsPath = ConnectionPath(pointA, pointB, directionA, directionB);
 
                     break;
 
-                case WireTypes.Line:
+                case Wire_Types.Line_Wire:
                     graphicsPath = ConnectLine(pointA, pointB, directionA, directionB, (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._lineExtend, MenuCreator._lineExtendDefault),
                        (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._lineRadius, MenuCreator._lineRadiusDefault));
                     break;
 
-                case WireTypes.Polyline:
+                case Wire_Types.Polyline_Wire:
                     graphicsPath = ConnectPolyline(pointA, pointB, directionA, directionB);
                     break;
             }

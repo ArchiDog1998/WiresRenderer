@@ -1,7 +1,9 @@
-﻿using Grasshopper.GUI;
+﻿using Grasshopper;
+using Grasshopper.GUI;
 using Grasshopper.GUI.Base;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Special;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -15,7 +17,7 @@ namespace RichedWireTypes
     public static class MenuCreator
     {
         internal static readonly string _wiretype = "WireType";
-        internal static readonly WireTypes _wiretypeDefault = WireTypes.Bezier;
+        internal static readonly Wire_Types _wiretypeDefault = Wire_Types.Bezier_Wire;
 
         internal static readonly string _lineExtend = "LineExtend";
         internal static readonly double _lineExtendDefault = 2.5;
@@ -35,16 +37,35 @@ namespace RichedWireTypes
         internal static readonly string _wireWidth = "WireWidth";
         internal static readonly double _wireWidthDefault = 1;
 
+        internal static readonly string _jumpToJumpTime = "JumpToJumpTime";
+        internal static readonly int _jumpToJumpTimeDefault = 500;
+
+        internal static readonly string _jumpToWaitTime = "JumpToWaitTime";
+        internal static readonly int _jumpToWaitTimeDefault = 500;
+
         public static ToolStripMenuItem CreateMajorMenu()
         {
             ToolStripMenuItem major = new ToolStripMenuItem("Riched Wire Types", Properties.Resources.RichedWireTypesIcons_24, new ToolStripItem[]
             {
-                CreateWireType(), CreateWireDefaultColor(), CreateWireSelectedColor()
+                CreateWireType(), CreateWireDefaultColor(), CreateWireSelectedColor(), CreateJumpTo(),
             }) { ToolTipText = "Change wire type or change wire width."};
             CreateNumberBox(major, "Multiple of Wire Width", _wireWidth, _wireWidthDefault, 10, 0.001);
 
             return major;
         }
+
+        private static ToolStripMenuItem CreateJumpTo()
+        {
+            ToolStripMenuItem major = new ToolStripMenuItem("Jump To Settings", new GH_JumpObject().Icon_24x24);
+            major.DropDownItems.Add(CreateControlStateCheckBox<Jump_Type>(null));
+
+            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+            CreateNumberBox(major, "Jump Time", _jumpToJumpTime, _jumpToJumpTimeDefault, 10000, 200, 0);
+            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+            CreateNumberBox(major, "Wait Time", _jumpToWaitTime, _jumpToWaitTimeDefault, 10000, 200, 0);
+            return major;
+        }
+
         private static ToolStripMenuItem CreateWireDefaultColor()
         {
             ToolStripMenuItem major = new ToolStripMenuItem("Wire Default Color") { ToolTipText = "Change wire default color and empty color." };
@@ -91,10 +112,10 @@ namespace RichedWireTypes
 
         private static ToolStripMenuItem CreateBezierMenu()
         {
-            bool isOn = Grasshopper.Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)WireTypes.Bezier;
+            bool isOn = Grasshopper.Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Bezier_Wire;
             ToolStripMenuItem major = new ToolStripMenuItem("Bezier Wire", Properties.Resources.BezierWireIcons_24)
             {
-                Tag = WireTypes.Bezier,
+                Tag = Wire_Types.Bezier_Wire,
                 Checked = isOn,
             };
 
@@ -107,10 +128,10 @@ namespace RichedWireTypes
 
         private static ToolStripMenuItem CreateLineMenu()
         {
-            bool isOn = Grasshopper.Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)WireTypes.Line;
+            bool isOn = Grasshopper.Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Line_Wire;
             ToolStripMenuItem major = new ToolStripMenuItem("Line Wire", Properties.Resources.LineWireIcons_24)
             {
-                Tag = WireTypes.Line,
+                Tag = Wire_Types.Line_Wire,
                 Checked = isOn,
             };
 
@@ -124,10 +145,10 @@ namespace RichedWireTypes
 
         private static ToolStripMenuItem CreatePolylineMenu()
         {
-            bool isOn = Grasshopper.Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)WireTypes.Polyline;
+            bool isOn = Grasshopper.Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Polyline_Wire;
             ToolStripMenuItem major = new ToolStripMenuItem("Polyline Wire", Properties.Resources.PolylineWireIcons_24)
             {
-                Tag = WireTypes.Polyline,
+                Tag = Wire_Types.Polyline_Wire,
                 Checked = isOn,
             };
 
@@ -181,8 +202,43 @@ namespace RichedWireTypes
             return picker;
         }
 
+        private static ToolStripMenuItem CreateControlStateCheckBox<T>(Bitmap icon) where T : Enum
+        {
+            ToolStripMenuItem major = new ToolStripMenuItem(typeof(T).Name.Replace('_', ' '));
+            if(icon != null) major.Image = icon;
 
-        private static void CreateNumberBox(ToolStripMenuItem item, string itemName, string valueName, double valueDefault, double Max, double Min)
+            major.DropDown.Closing += DropDown_Closing;
+
+
+            string saveKey = typeof(T).FullName;
+            int current = Instances.Settings.GetValue(saveKey, 0);
+
+            var enums = Enum.GetNames(typeof(T)).GetEnumerator();
+            foreach (int i in Enum.GetValues(typeof(T)))
+            {
+                enums.MoveNext();
+                string name = enums.Current.ToString().Replace('_', ' ');
+                ToolStripMenuItem item = new ToolStripMenuItem(name) { Tag = i, Checked = i == current };
+                item.Click += Item_Click;
+                major.DropDownItems.Add(item);
+            }
+
+            void Item_Click(object sender, EventArgs e)
+            {
+                foreach (ToolStripMenuItem dropIt in major.DropDownItems)
+                {
+                    dropIt.Checked = false;
+                }
+
+                ToolStripMenuItem it = (ToolStripMenuItem)sender;
+                it.Checked = true;
+                Instances.Settings.SetValue(saveKey, (int)it.Tag);
+            }
+
+            return major;
+        }
+
+        private static void CreateNumberBox(ToolStripMenuItem item, string itemName, string valueName, double valueDefault, double Max, double Min, int decimalPlace = 3)
         {
             item.DropDown.Closing -= DropDown_Closing;
             item.DropDown.Closing +=  DropDown_Closing;
@@ -193,9 +249,8 @@ namespace RichedWireTypes
             textBox.ToolTipText = $"Value from {Min} to {Max}";
             item.DropDownItems.Add(textBox);
 
-            int decimalPlace = 3;
 
-            GH_DigitScroller slider = new GH_DigitScroller
+            Grasshopper.GUI.GH_DigitScroller slider = new Grasshopper.GUI.GH_DigitScroller
             {
                 MinimumValue = (decimal)Min,
                 MaximumValue = (decimal)Max,

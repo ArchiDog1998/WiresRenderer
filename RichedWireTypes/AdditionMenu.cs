@@ -102,8 +102,8 @@ namespace RichedWireTypes
         private void Menu_JumpClicked(object sender, EventArgs e)
         {
             _isJump = true;
-            int jumpTime = 500;
-            int WaitTime = 500;
+            int jumpTime = Instances.Settings.GetValue(MenuCreator._jumpToJumpTime, MenuCreator._jumpToJumpTimeDefault);
+            int WaitTime = Instances.Settings.GetValue(MenuCreator._jumpToWaitTime, MenuCreator._jumpToWaitTimeDefault);
 
             IGH_Param target = (IGH_Param)((ToolStripMenuItem)sender).Tag;
 
@@ -112,7 +112,18 @@ namespace RichedWireTypes
             float height = canvas.Viewport.MidPoint.Y - this.Attributes.Pivot.Y;
             double num = GH_GraphicsUtil.Distance(this.Attributes.Pivot, target.Attributes.Pivot);
 
-            RectangleF documentPort = canvas.Document.BoundingBox();
+            //ChangeSelected.
+            Instances.ActiveCanvas.Document.DeselectAll();
+            this.Attributes.Selected = target.Attributes.Selected = true;
+
+            string saveKey = typeof(Jump_Type).FullName;
+            Jump_Type current = (Jump_Type)Instances.Settings.GetValue(saveKey, 0);
+            RectangleF documentPort = canvas.Document.BoundingBox(current == Jump_Type.Two_Object);
+
+            //Change Selected.
+            Instances.ActiveCanvas.Document.DeselectAll();
+            target.Attributes.Selected = true;
+
             documentPort.Inflate(5f, 5f);
             Rectangle screenPort = canvas.Viewport.ScreenPort;
             screenPort.Inflate(-5, -5);
@@ -123,13 +134,10 @@ namespace RichedWireTypes
             aimViewPort.Type = GH_NamedViewType.center;
             aimViewPort.Zoom = canvas.Viewport.Zoom;
 
-            //Change Selected.
-            Instances.ActiveCanvas.Document.DeselectAll();
-            target.Attributes.Selected = true;
+
 
             //Doing some jump.
-            zoomView.SetToViewport(canvas, jumpTime);
-            canvas.Document.ScheduleSolution(WaitTime, (doc) =>
+            if(current == Jump_Type.Direct_Move)
             {
                 aimViewPort.SetToViewport(canvas, jumpTime);
                 canvas.Document.ScheduleSolution(WaitTime, (doc2) =>
@@ -137,7 +145,22 @@ namespace RichedWireTypes
                     Instances.ActiveCanvas.RemoveTagArtist(GH_TagArtist_WirePainter.WirePainter_ID);
                     _isJump = false;
                 });
-            });
+            }
+            else
+            {
+                zoomView.SetToViewport(canvas, jumpTime);
+                canvas.Document.ScheduleSolution(WaitTime, (doc) =>
+                {
+                    aimViewPort.SetToViewport(canvas, jumpTime);
+
+                });
+                canvas.Document.ScheduleSolution(jumpTime + WaitTime, (doc2) =>
+                {
+                    Instances.ActiveCanvas.RemoveTagArtist(GH_TagArtist_WirePainter.WirePainter_ID);
+                    _isJump = false;
+                });
+            }
+
         }
 
         private void Menu_JumpMouseLeave(object sender, EventArgs e)
