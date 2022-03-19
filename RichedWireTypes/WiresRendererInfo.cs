@@ -6,9 +6,9 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace RichedWireTypes
+namespace WiresRenderer
 {
-    public class RichedWireTypesInfo : GH_AssemblyInfo
+    public class WiresRendererInfo : GH_AssemblyInfo
     {
         public override string Name => "Riched Wire Types";
 

@@ -14,7 +14,7 @@ using System.Drawing.Drawing2D;
 using Grasshopper.GUI;
 using Grasshopper.Kernel.Special;
 
-namespace RichedWireTypes
+namespace WiresRenderer
 {
     internal abstract class AdditionMenu : GH_ActiveObject
 	{

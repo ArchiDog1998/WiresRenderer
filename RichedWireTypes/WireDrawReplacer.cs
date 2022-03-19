@@ -2,6 +2,7 @@
 using Grasshopper.GUI.Canvas;
 using Grasshopper.GUI.Canvas.TagArtists;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Attributes;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Undo;
@@ -17,7 +18,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RichedWireTypes
+namespace WiresRenderer
 {
 
     internal class WireDrawReplacer : GH_Painter
@@ -280,11 +281,11 @@ namespace RichedWireTypes
         {
             ExchangeMethod(
                 typeof(GH_Painter).GetRuntimeMethods().Where(m => m.Name.Contains("DrawConnection")).First(),
-                typeof(WireDrawReplacer).GetRuntimeMethods().Where(m => m.Name.Contains("NewDrawConnection")).First()
+                typeof(WireDrawReplacer).GetRuntimeMethods().Where(m => m.Name.Contains(nameof(NewDrawConnection))).First()
                 );
             ExchangeMethod(
                 typeof(GH_Document).GetRuntimeMethods().Where(m => m.Name.Contains("DistanceToWire")).First(),
-                typeof(WireDrawReplacer).GetRuntimeMethods().Where(m => m.Name.Contains("DistanceToWireNew")).First()
+                typeof(WireDrawReplacer).GetRuntimeMethods().Where(m => m.Name.Contains(nameof(DistanceToWireNew))).First()
                 );
 
             ExchangeMethod(

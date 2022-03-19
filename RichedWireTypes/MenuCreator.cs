@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace RichedWireTypes
+namespace WiresRenderer
 {
     public static class MenuCreator
     {
