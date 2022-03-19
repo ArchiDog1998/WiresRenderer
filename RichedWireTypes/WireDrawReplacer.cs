@@ -88,6 +88,7 @@ namespace WiresRenderer
             return pen;
         }
 
+
         private static GraphicsPath ConnectLine(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB, float distance, float radius, bool isTrim = false)
         {
             PointF pointRight, pointLeft;
@@ -167,7 +168,6 @@ namespace WiresRenderer
                     }
                     else
                     {
-
                         radius = Math.Min(radius, GetMaxRadius(pointRightM, pointLeftM));
                     }
 
@@ -271,11 +271,32 @@ namespace WiresRenderer
             {
                 return c;
             }
+
             float p0 = (a + b + c) / 2;
             float s = (float)Math.Sqrt(p0 * (p0 - a) * (p0 - b) * (p0 - c));
             return 2 * s / a;
         }
 
+        public static RectangleF LayoutBounds(IGH_Component owner, RectangleF bounds)
+        {
+            float offset = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._capsuleOffsetRadius, MenuCreator._capsuleOffsetRadiusDefault);
+            foreach (IGH_Param param in owner.Params)
+            {
+                bounds = RectangleF.Union(bounds, param.Attributes.Bounds);
+            }
+            bounds.Inflate(offset, offset);
+
+            foreach (IGH_Param param in owner.Params.Input)
+            {
+                param.Attributes.Bounds = new RectangleF(param.Attributes.Bounds.X - offset, param.Attributes.Bounds.Y, param.Attributes.Bounds.Width + offset, param.Attributes.Bounds.Height);
+            }
+
+            foreach (IGH_Param param in owner.Params.Output)
+            {
+                param.Attributes.Bounds = new RectangleF(param.Attributes.Bounds.X, param.Attributes.Bounds.Y, param.Attributes.Bounds.Width + offset, param.Attributes.Bounds.Height);
+            }
+            return bounds;
+        }
 
         public static bool Init()
         {
@@ -283,6 +304,7 @@ namespace WiresRenderer
                 typeof(GH_Painter).GetRuntimeMethods().Where(m => m.Name.Contains("DrawConnection")).First(),
                 typeof(WireDrawReplacer).GetRuntimeMethods().Where(m => m.Name.Contains(nameof(NewDrawConnection))).First()
                 );
+
             ExchangeMethod(
                 typeof(GH_Document).GetRuntimeMethods().Where(m => m.Name.Contains("DistanceToWire")).First(),
                 typeof(WireDrawReplacer).GetRuntimeMethods().Where(m => m.Name.Contains(nameof(DistanceToWireNew))).First()
@@ -292,6 +314,9 @@ namespace WiresRenderer
                 typeof(GH_DocumentObject).GetRuntimeMethods().Where(m => m.Name.Contains("Menu_AppendPublish")).First(),
                 typeof(AdditionMenu).GetRuntimeMethods().Where(m => m.Name.Contains("Menu_AppendPublishNew")).First()
                 );
+
+            ExchangeMethod(typeof(GH_ComponentAttributes).GetRuntimeMethods().Where(m => m.Name.Contains("LayoutBounds")).First(),
+                typeof(WireDrawReplacer).GetRuntimeMethods().Where(m => m.Name.Contains(nameof(LayoutBounds))).First());
 
             Grasshopper.Instances.ActiveCanvas.Document_ObjectsAdded += ActiveCanvas_Document_ObjectsAdded;
             Grasshopper.Instances.ActiveCanvas.CanvasPaintBegin += ActiveCanvas_CanvasPaintBegin;
@@ -335,6 +360,7 @@ namespace WiresRenderer
             {
                 return false;
             }
+
             RuntimeHelpers.PrepareMethod(targetMethod.MethodHandle);
             RuntimeHelpers.PrepareMethod(injectMethod.MethodHandle);
             unsafe

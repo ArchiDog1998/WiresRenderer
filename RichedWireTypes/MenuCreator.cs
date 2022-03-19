@@ -43,6 +43,9 @@ namespace WiresRenderer
         internal static readonly string _jumpToWaitTime = "JumpToWaitTime";
         internal static readonly int _jumpToWaitTimeDefault = 500;
 
+        internal static readonly string _capsuleOffsetRadius = "CapsuleOffsetRadius";
+        internal static readonly double _capsuleOffsetRadiusDefault = 2;
+
         public static ToolStripMenuItem CreateMajorMenu()
         {
             ToolStripMenuItem major = new ToolStripMenuItem("Riched Wire Types", Properties.Resources.RichedWireTypesIcons_24, new ToolStripItem[]
@@ -50,6 +53,8 @@ namespace WiresRenderer
                 CreateWireType(), CreateWireDefaultColor(), CreateWireSelectedColor(), CreateJumpTo(),
             }) { ToolTipText = "Change wire type or change wire width."};
             CreateNumberBox(major, "Multiple of Wire Width", _wireWidth, _wireWidthDefault, 10, 0.001);
+            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+            CreateNumberBox(major, "Capsule Offset Distance", _capsuleOffsetRadius, _capsuleOffsetRadiusDefault, 20, 0, 3, true);
 
             return major;
         }
@@ -238,7 +243,7 @@ namespace WiresRenderer
             return major;
         }
 
-        private static void CreateNumberBox(ToolStripMenuItem item, string itemName, string valueName, double valueDefault, double Max, double Min, int decimalPlace = 3)
+        private static void CreateNumberBox(ToolStripMenuItem item, string itemName, string valueName, double valueDefault, double Max, double Min, int decimalPlace = 3, bool expireLayout = false)
         {
             item.DropDown.Closing -= DropDown_Closing;
             item.DropDown.Closing +=  DropDown_Closing;
@@ -265,10 +270,20 @@ namespace WiresRenderer
                 double result = (double)e.Value;
                 result = result >= Min ? result : Min;
                 result = result <= Max ? result : Max;
-                Grasshopper.Instances.Settings.SetValue(valueName, result);
+                Instances.Settings.SetValue(valueName, result);
                 slider.Value = (decimal)result;
 
-                Grasshopper.Instances.ActiveCanvas.Refresh();
+                if (expireLayout)
+                {
+                    foreach (GH_Document doc in Instances.DocumentServer)
+                    {
+                        foreach (IGH_Attributes attr in doc.Attributes)
+                        {
+                            attr.ExpireLayout();
+                        }
+                    }
+                }
+                Instances.ActiveCanvas.Refresh();
             }
 
             GH_DocumentObject.Menu_AppendCustomItem(item.DropDown, slider);
@@ -277,9 +292,20 @@ namespace WiresRenderer
             ToolStripMenuItem resetItem = new ToolStripMenuItem("Reset Value", Properties.Resources.ResetIcons_24);
             resetItem.Click += (sender, e) =>
             {
-                Grasshopper.Instances.Settings.SetValue(valueName, valueDefault);
+                Instances.Settings.SetValue(valueName, valueDefault);
                 slider.Value = (decimal)valueDefault;
-                Grasshopper.Instances.ActiveCanvas.Refresh();
+
+                if (expireLayout)
+                {
+                    foreach (GH_Document doc in Instances.DocumentServer)
+                    {
+                        foreach (IGH_Attributes attr in doc.Attributes)
+                        {
+                            attr.ExpireLayout();
+                        }
+                    }
+                }
+                Instances.ActiveCanvas.Refresh();
             };
             item.DropDownItems.Add(resetItem);
         }
