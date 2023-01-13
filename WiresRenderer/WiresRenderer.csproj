@@ -15,22 +15,7 @@
   </PropertyGroup>
 	
   <ItemGroup>
-    <Reference Include="GH_IO">
-      <HintPath>E:\Software\Rhino 6\Plug-ins\Grasshopper\GH_IO.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="GH_Util">
-      <HintPath>E:\Software\Rhino 6\Plug-ins\Grasshopper\GH_Util.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Grasshopper">
-      <HintPath>E:\Software\Rhino 6\Plug-ins\Grasshopper\Grasshopper.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="RhinoCommon">
-      <HintPath>E:\Software\Rhino 6\System\RhinoCommon.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
+    <PackageReference Include="Grasshopper" Version="6.12.19029.6381" />
   </ItemGroup>
   
   <ItemGroup>
