@@ -259,28 +259,16 @@ namespace WiresRenderer
 
                     //Get Radius and Shrink by pitch's distance.
                     float tan = (float)Math.Tan(centerDegree / 2);
-                    float halflength = (float)Math.Sqrt(Math.Pow(CenterDir.X, 2) + Math.Pow(CenterDir.Y, 2)) / 2;
-                    float shouldRadiusRight = (float)Math.Min(radiusRight, halflength / tan - TOLERANCE);
-                    float shouldRadiusLeft = (float)Math.Min(radiusLeft, halflength / tan - TOLERANCE);
-                    float shouldShrinkRight = tan * shouldRadiusRight;
-                    float shouldShrinkLeft = tan * shouldRadiusLeft;
+                    float shouldShrinkRight = tan * radiusRight;
+                    float shouldShrinkLeft = tan * radiusLeft;
 
+                    distanceRight = Math.Min(shouldShrinkRight, distanceRight);
+                    distanceLeft = Math.Min(shouldShrinkLeft, distanceLeft);
 
-                    if (shouldShrinkRight > distanceRight || shouldShrinkLeft > distanceLeft)
-                    {
-                        pointRightM = new PointF(pointRightM.X - distanceRight, pointRightM.Y);
-                        pointLeftM = new PointF(pointLeftM.X + distanceLeft, pointLeftM.Y);
+                    pointRightM = new PointF(pointRightM.X - distanceRight, pointRightM.Y);
+                    pointLeftM = new PointF(pointLeftM.X + distanceLeft, pointLeftM.Y);
 
-                        ChangeRadius(ref radiusRight, ref radiusLeft, pointRightM, pointLeftM);
-                    }
-                    else
-                    {
-                        pointRightM = new PointF(pointRightM.X - shouldShrinkRight, pointRightM.Y);
-                        pointLeftM = new PointF(pointLeftM.X + shouldShrinkLeft, pointLeftM.Y);
-
-                        radiusRight = shouldRadiusRight - TOLERANCE;
-                        radiusLeft = shouldRadiusLeft - TOLERANCE;
-                    }
+                    ChangeRadius(ref radiusRight, ref radiusLeft, pointRightM, pointLeftM);
                 }
             }
             else
