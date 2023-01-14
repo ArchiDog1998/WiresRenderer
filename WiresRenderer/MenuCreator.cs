@@ -16,39 +16,49 @@ namespace WiresRenderer
 {
     public static class MenuCreator
     {
-        internal static readonly string _wiretype = "WireType";
-        internal static readonly Wire_Types _wiretypeDefault = Wire_Types.Bezier_Wire;
+        const string PREFIX = "WiresRenderer_";
+        internal static readonly string _wiretype = PREFIX + "WireType";
+        internal static readonly Wire_Types _wiretypeDefault = Wire_Types.Electric_Wire;
 
-        internal static readonly string _lineExtend = "LineExtend";
-        internal static readonly double _lineExtendDefault = 2.5;
+        internal static readonly string _lineExtend = PREFIX + "LineExtend";
+        internal static readonly double _lineExtendDefault = 3;
 
-        internal static readonly string _lineRadius = "LineRadius";
-        internal static readonly double _lineRadiusDefault = 5;
+        internal static readonly string _lineRadius = PREFIX + "LineRadius";
+        internal static readonly double _lineRadiusDefault = 8;
 
-        internal static readonly string _polylineExtend = "PolylineExtend";
-        internal static readonly double _polylineExtendDefault = 2.5;
+        internal static readonly string _polylineExtend = PREFIX + "PolylineExtend";
+        internal static readonly double _polylineExtendDefault = 3;
 
-        internal static readonly string _polylineMulty = "PolylineMulty";
+        internal static readonly string _polylineMulty = PREFIX + "PolylineMulty";
         internal static readonly double _polylineMultyDefault = 0.3;
 
-        internal static readonly string _polylineRadius = "PolylineRadius";
-        internal static readonly double _polylineRadiusDefault = 5;
+        internal static readonly string _polylineRadius = PREFIX + "PolylineRadius";
+        internal static readonly double _polylineRadiusDefault = 12;
 
-        internal static readonly string _wireWidth = "WireWidth";
+        internal static readonly string _electricExtend = PREFIX + "ElectricExtend";
+        internal static readonly double _electricExtendDefault = 10;
+
+        internal static readonly string _electricMulty = PREFIX + "ElectricMulty";
+        internal static readonly double _electricMultyDefault = 1;
+
+        internal static readonly string _electricRadius = PREFIX + "ElectricRadius";
+        internal static readonly double _electricRadiusDefault = 12;
+
+        internal static readonly string _wireWidth = PREFIX + "WireWidth";
         internal static readonly double _wireWidthDefault = 1;
 
-        internal static readonly string _jumpToJumpTime = "JumpToJumpTime";
+        internal static readonly string _jumpToJumpTime = PREFIX + "JumpToJumpTime";
         internal static readonly int _jumpToJumpTimeDefault = 500;
 
-        internal static readonly string _jumpToWaitTime = "JumpToWaitTime";
+        internal static readonly string _jumpToWaitTime = PREFIX + "JumpToWaitTime";
         internal static readonly int _jumpToWaitTimeDefault = 500;
 
-        internal static readonly string _capsuleOffsetRadius = "CapsuleOffsetRadius";
+        internal static readonly string _capsuleOffsetRadius = PREFIX + "CapsuleOffsetRadius";
         internal static readonly double _capsuleOffsetRadiusDefault = 2;
 
         public static ToolStripMenuItem CreateMajorMenu()
         {
-            ToolStripMenuItem major = new ToolStripMenuItem("Riched Wire Types", Properties.Resources.RichedWireTypesIcons_24, new ToolStripItem[]
+            ToolStripMenuItem major = new ToolStripMenuItem("Wires Renderer", Properties.Resources.WiresRendererIcons_24, new ToolStripItem[]
             {
                 CreateWireType(), CreateWireDefaultColor(), CreateWireSelectedColor(), CreateJumpTo(),
             }) { ToolTipText = "Change wire type or change wire width."};
@@ -79,7 +89,6 @@ namespace WiresRenderer
             GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
             CreateColor(major, "Empty Color", GH_Skin.wire_empty, Color.FromArgb(180, 255, 60, 0), (color) => GH_Skin.wire_empty = color);
 
-
             return major;
         }
 
@@ -96,7 +105,7 @@ namespace WiresRenderer
             {
                 pickerB.Colour = pickerA.Colour;
                 GH_Skin.wire_selected_b = pickerA.Colour;
-                Grasshopper.Instances.ActiveCanvas.Refresh();
+                Instances.ActiveCanvas.Refresh();
             };
             major.DropDownItems.Add(toSameItem);
 
@@ -104,12 +113,13 @@ namespace WiresRenderer
             return major;
         }
 
+        #region WireType Control
         private static ToolStripMenuItem CreateWireType()
         {
             ToolStripMenuItem major = new ToolStripMenuItem("Wire Types") { ToolTipText = "Provide a list of wire types" };
             major.DropDownItems.AddRange(new ToolStripItem[]
             {
-                CreateBezierMenu(),CreateLineMenu(), CreatePolylineMenu(),
+                CreateBezierMenu(),CreateLineMenu(), CreatePolylineMenu(), CreateElectricMenu(),
             });
 
             return major;
@@ -117,7 +127,7 @@ namespace WiresRenderer
 
         private static ToolStripMenuItem CreateBezierMenu()
         {
-            bool isOn = Grasshopper.Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Bezier_Wire;
+            bool isOn = Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Bezier_Wire;
             ToolStripMenuItem major = new ToolStripMenuItem("Bezier Wire", Properties.Resources.BezierWireIcons_24)
             {
                 Tag = Wire_Types.Bezier_Wire,
@@ -129,11 +139,9 @@ namespace WiresRenderer
             return major;
         }
 
-
-
         private static ToolStripMenuItem CreateLineMenu()
         {
-            bool isOn = Grasshopper.Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Line_Wire;
+            bool isOn = Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Line_Wire;
             ToolStripMenuItem major = new ToolStripMenuItem("Line Wire", Properties.Resources.LineWireIcons_24)
             {
                 Tag = Wire_Types.Line_Wire,
@@ -150,7 +158,7 @@ namespace WiresRenderer
 
         private static ToolStripMenuItem CreatePolylineMenu()
         {
-            bool isOn = Grasshopper.Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Polyline_Wire;
+            bool isOn = Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Polyline_Wire;
             ToolStripMenuItem major = new ToolStripMenuItem("Polyline Wire", Properties.Resources.PolylineWireIcons_24)
             {
                 Tag = Wire_Types.Polyline_Wire,
@@ -159,9 +167,27 @@ namespace WiresRenderer
 
             CreateNumberBox(major, "End Extend Length", _polylineExtend, _polylineExtendDefault, 100, 0);
             GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
-            CreateNumberBox(major, "Multiple of Corner Pitch", _polylineMulty, _polylineMultyDefault, 0.5, 0);
+            CreateNumberBox(major, "Multiple of Corner Pitch", _polylineMulty, _polylineMultyDefault, 1, 0);
             GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
             CreateNumberBox(major, "Corner Radius", _polylineRadius, _polylineRadiusDefault, 100, 0);
+
+            major.Click += WireType_Click;
+            return major;
+        }
+        private static ToolStripMenuItem CreateElectricMenu()
+        {
+            bool isOn = Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Electric_Wire;
+            ToolStripMenuItem major = new ToolStripMenuItem("Electric Wire", Properties.Resources.ElectricWireIcons_24)
+            {
+                Tag = Wire_Types.Electric_Wire,
+                Checked = isOn,
+            };
+
+            CreateNumberBox(major, "End Extend Length", _electricExtend, _electricExtendDefault, 100, 0);
+            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+            CreateNumberBox(major, "Multiple of Corner Pitch", _electricMulty, _electricMultyDefault, 1, 0);
+            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+            CreateNumberBox(major, "Corner Radius", _electricRadius, _electricRadiusDefault, 100, 0);
 
             major.Click += WireType_Click;
             return major;
@@ -175,10 +201,12 @@ namespace WiresRenderer
             }
             ((ToolStripMenuItem)sender).Checked = true;
 
-            Grasshopper.Instances.Settings.SetValue(_wiretype, (int)((ToolStripMenuItem)sender).Tag);
-            Grasshopper.Instances.ActiveCanvas.Refresh();
+            Instances.Settings.SetValue(_wiretype, (int)((ToolStripMenuItem)sender).Tag);
+            Instances.ActiveCanvas.Refresh();
         }
+        #endregion
 
+        #region Winform Controls
         private static GH_ColourPicker CreateColor(ToolStripMenuItem item, string itemName, Color rightColor, Color defaultColor, Action<Color> changeColor)
         {
             item.DropDown.Closing -= DropDown_Closing;
@@ -260,7 +288,7 @@ namespace WiresRenderer
                 MinimumValue = (decimal)Min,
                 MaximumValue = (decimal)Max,
                 DecimalPlaces = decimalPlace,
-                Value = (decimal)Grasshopper.Instances.Settings.GetValue(valueName, valueDefault),
+                Value = (decimal)Instances.Settings.GetValue(valueName, valueDefault),
                 Size = new Size(150, 24),
             };
             slider.ValueChanged += Slider_ValueChanged;
@@ -314,5 +342,7 @@ namespace WiresRenderer
         {
             e.Cancel = e.CloseReason == ToolStripDropDownCloseReason.ItemClicked;
         }
+
+        #endregion
     }
 }

@@ -73,6 +73,16 @@ namespace WiresRenderer.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap ElectricWireIcons_24 {
+            get {
+                object obj = ResourceManager.GetObject("ElectricWireIcons_24", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap LineWireIcons_24 {
             get {
                 object obj = ResourceManager.GetObject("LineWireIcons_24", resourceCulture);
@@ -103,19 +113,9 @@ namespace WiresRenderer.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap RichedWireTypesIcons_128 {
+        internal static System.Drawing.Bitmap WiresRendererIcons_24 {
             get {
-                object obj = ResourceManager.GetObject("RichedWireTypesIcons_128", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap RichedWireTypesIcons_24 {
-            get {
-                object obj = ResourceManager.GetObject("RichedWireTypesIcons_24", resourceCulture);
+                object obj = ResourceManager.GetObject("WiresRendererIcons_24", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

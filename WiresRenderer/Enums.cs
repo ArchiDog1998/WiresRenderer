@@ -11,12 +11,13 @@ namespace WiresRenderer
         Bezier_Wire,
         Line_Wire,
         Polyline_Wire,
+        Electric_Wire,
     }
 
     public enum Jump_Type
     {
         Whole_Screen,
         Two_Object,
-        Direct_Move
+        Direct_Move,
     }
 }

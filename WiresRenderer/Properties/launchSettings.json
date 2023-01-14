@@ -1,12 +1,12 @@
 {
   "profiles": {
-    "RichedWireTypes": {
-      "commandName": "Executable",
-      "executablePath": "E:\\Software\\Rhino 7\\System\\Rhino.exe"
-    },
     "Work": {
       "commandName": "Executable",
       "executablePath": "C:\\Program Files\\Rhino 7\\System\\Rhino.exe"
+    },
+    "WiresRenderer": {
+      "commandName": "Executable",
+      "executablePath": "E:\\Software\\Rhino 7\\System\\Rhino.exe"
     }
   }
 }

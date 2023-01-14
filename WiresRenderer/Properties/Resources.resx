@@ -121,6 +121,9 @@
   <data name="BezierWireIcons_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\BezierWireIcons_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="ElectricWireIcons_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ElectricWireIcons_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="LineWireIcons_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\LineWireIcons_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -130,10 +133,7 @@
   <data name="ResetIcons_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\ResetIcons_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="RichedWireTypesIcons_128" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\RichedWireTypesIcons_128.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="RichedWireTypesIcons_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\RichedWireTypesIcons_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="WiresRendererIcons_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\WiresRendererIcons_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>
