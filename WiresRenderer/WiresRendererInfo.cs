@@ -10,7 +10,7 @@ namespace WiresRenderer
 {
     public class WiresRendererInfo : GH_AssemblyInfo
     {
-        public override string Name => "Riched Wire Types";
+        public override string Name => "Wires Renderer";
 
         //Return a 24x24 pixel bitmap to represent this GHA library.
         public override Bitmap Icon => Properties.Resources.WiresRendererIcons_24;
@@ -26,26 +26,25 @@ namespace WiresRenderer
         //Return a string representing your preferred contact details.
         public override string AuthorContact => "1123993881@qq.com";
 
-        public override string Version => "1.3.2";
+        public override string Version => "1.3.3";
     }
 
     public class SuperHelperAssemblyPriority : GH_AssemblyPriority
     {
         public override GH_LoadingInstruction PriorityLoad()
         {
-            //MessageBox.Show("Hello");
-            Grasshopper.Instances.CanvasCreated += Instances_CanvasCreated;
+            Instances.CanvasCreated += Instances_CanvasCreated;
             return GH_LoadingInstruction.Proceed;
         }
 
         private void Instances_CanvasCreated(GH_Canvas canvas)
         {
-            Grasshopper.Instances.CanvasCreated -= Instances_CanvasCreated;
+            Instances.CanvasCreated -= Instances_CanvasCreated;
 
-            GH_DocumentEditor editor = Grasshopper.Instances.DocumentEditor;
+            GH_DocumentEditor editor = Instances.DocumentEditor;
             if (editor == null)
             {
-                Grasshopper.Instances.ActiveCanvas.DocumentChanged += ActiveCanvas_DocumentChanged;
+                Instances.ActiveCanvas.DocumentChanged += ActiveCanvas_DocumentChanged;
                 return;
             }
             DoingSomethingFirst(editor);
@@ -53,12 +52,12 @@ namespace WiresRenderer
 
         private void ActiveCanvas_DocumentChanged(GH_Canvas sender, GH_CanvasDocumentChangedEventArgs e)
         {
-            Grasshopper.Instances.ActiveCanvas.DocumentChanged -= ActiveCanvas_DocumentChanged;
+            Instances.ActiveCanvas.DocumentChanged -= ActiveCanvas_DocumentChanged;
 
-            GH_DocumentEditor editor = Grasshopper.Instances.DocumentEditor;
+            GH_DocumentEditor editor = Instances.DocumentEditor;
             if (editor == null)
             {
-                MessageBox.Show("SuperHelper can't find the menu!");
+                MessageBox.Show("WiresRenderer can't find the menu!");
                 return;
             }
             DoingSomethingFirst(editor);

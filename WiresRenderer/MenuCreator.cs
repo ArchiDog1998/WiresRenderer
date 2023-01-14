@@ -41,8 +41,11 @@ namespace WiresRenderer
         internal static readonly string _electricMulty = PREFIX + "ElectricMulty";
         internal static readonly double _electricMultyDefault = 1;
 
-        internal static readonly string _electricRadius = PREFIX + "ElectricRadius";
-        internal static readonly double _electricRadiusDefault = 12;
+        internal static readonly string _electricRadius1 = PREFIX + "ElectricRadius1";
+        internal static readonly double _electricRadius1Default = 100;
+
+        internal static readonly string _electricRadius2 = PREFIX + "ElectricRadius2";
+        internal static readonly double _electricRadius2Default = 12;
 
         internal static readonly string _wireWidth = PREFIX + "WireWidth";
         internal static readonly double _wireWidthDefault = 1;
@@ -187,7 +190,9 @@ namespace WiresRenderer
             GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
             CreateNumberBox(major, "Multiple of Corner Pitch", _electricMulty, _electricMultyDefault, 1, 0);
             GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
-            CreateNumberBox(major, "Corner Radius", _electricRadius, _electricRadiusDefault, 100, 0);
+            CreateNumberBox(major, "Corner Radius 1", _electricRadius1, _electricRadius1Default, 1000, 0);
+            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+            CreateNumberBox(major, "Corner Radius 2", _electricRadius2, _electricRadius2Default, 100, 0);
 
             major.Click += WireType_Click;
             return major;

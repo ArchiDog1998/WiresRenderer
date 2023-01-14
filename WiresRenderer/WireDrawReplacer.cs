@@ -27,6 +27,7 @@ namespace WiresRenderer
     {
         private static MethodInfo generatePen = typeof(GH_Painter).GetRuntimeMethods().Where(m => m.Name.Contains("GenerateWirePen")).First();
         private static FieldInfo artTags = typeof(GH_Canvas).GetRuntimeFields().Where(m => m.Name.Contains("_artists")).First();
+        const float TOLERANCE = 0.001f;
 
         protected WireDrawReplacer(GH_Canvas owner) : base(owner)
         {
@@ -67,8 +68,8 @@ namespace WiresRenderer
 
                 case Wire_Types.Line_Wire:
                     var extend = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._lineExtend, MenuCreator._lineExtendDefault);
-                    graphicsPath = ConnectLine(pointA, pointB, directionA, directionB, extend, extend,
-                       (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._lineRadius, MenuCreator._lineRadiusDefault));
+                    var radius = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._lineRadius, MenuCreator._lineRadiusDefault);
+                    graphicsPath = ConnectLine(pointA, pointB, directionA, directionB, extend, extend, radius, radius);
                     break;
 
                 case Wire_Types.Polyline_Wire:
@@ -97,7 +98,6 @@ namespace WiresRenderer
         private static GraphicsPath ConnectElectric(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
         {
             var shortExtend = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._electricExtend, MenuCreator._electricExtendDefault);
-            var radius = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._electricRadius, MenuCreator._electricRadiusDefault);
 
             PointF pointRight, pointLeft;
 
@@ -125,23 +125,27 @@ namespace WiresRenderer
                     vertical * (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._electricMulty, MenuCreator._electricMultyDefault));
             }
 
-            var path = ConnectLine(pointRight, pointLeft, longExtend, shortExtend, radius, true);
+            var radius1 = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._electricRadius1, MenuCreator._electricRadius1Default);
+            var radius2 = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._electricRadius2, MenuCreator._electricRadius2Default);
+            var path = ConnectLine(pointRight, pointLeft, longExtend, shortExtend, radius1, radius2, true);
 
             if (directionA != GH_WireDirection.left) path.Reverse();
             return path;
         }
 
         private static GraphicsPath ConnectLine(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB, 
-            float distanceA, float distanceB, float radius, bool isTrim = false)
+            float distanceA, float distanceB, float radiusA, float radiusB, bool isTrim = false)
         {
             PointF pointRight, pointLeft;
-            float distanceRight, distanceLeft;
+            float distanceRight, distanceLeft, radiusRight, radiusLeft;
             if (directionA != GH_WireDirection.left)
             {
                 pointRight = pointA;
                 pointLeft = pointB;
                 distanceRight = distanceA;
                 distanceLeft = distanceB;
+                radiusRight = radiusA;
+                radiusLeft = radiusB;
             }
             else
             {
@@ -149,16 +153,18 @@ namespace WiresRenderer
                 pointLeft = pointA;
                 distanceRight = distanceB;
                 distanceLeft = distanceA;
+                radiusRight = radiusB;
+                radiusLeft = radiusA;
             }
 
-            var path = ConnectLine(pointRight, pointLeft, distanceRight, distanceLeft, radius, isTrim);
+            var path = ConnectLine(pointRight, pointLeft, distanceRight, distanceLeft, radiusRight, radiusLeft, isTrim);
 
             if (directionA != GH_WireDirection.left) path.Reverse();
             return path;
         }
 
         private static GraphicsPath ConnectLine(PointF pointRight, PointF pointLeft, float distanceRight, float distanceLeft, 
-            float radius, bool isTrim)
+            float radiusRight, float radiusLeft, bool isTrim)
         {
             GraphicsPath path = new GraphicsPath();
 
@@ -171,18 +177,18 @@ namespace WiresRenderer
                 PointF pointRightM = new PointF(pointRight.X + distanceRight, pointRight.Y);
                 PointF pointLeftM = new PointF(pointLeft.X - distanceLeft, pointLeft.Y);
 
-                if (radius < 0)
+                if (radiusRight < 0 && radiusLeft < 0)
                 {
                     path.AddLine(pointRight, pointRightM);
                     path.AddLine(pointLeftM, pointLeft);
                 }
                 else
                 {
-                    ChangeRadiusAndPointM(ref radius, ref pointRightM, ref pointLeftM, distanceRight, distanceRight, isTrim);
+                    ChangeRadiusAndPointM(ref radiusRight, ref radiusLeft, ref pointRightM, ref pointLeftM, distanceRight, distanceRight, isTrim);
 
                     path.AddLine(pointRight, pointRightM);
 
-                    AddArcOnPolyline(path, radius, pointRightM, pointLeftM, pointRight.Y >= pointLeft.Y);
+                    AddArcOnPolyline(path, radiusRight, radiusLeft, pointRightM, pointLeftM, pointRight.Y >= pointLeft.Y);
 
                     path.AddLine(pointLeftM, pointLeft);
                 }
@@ -191,60 +197,58 @@ namespace WiresRenderer
             return path;
         }
 
-        private static void AddArcOnPolyline(GraphicsPath path, float radius, PointF pointRightM, PointF pointLeftM, bool rightPtOnBottom)
+        private static void AddArcOnPolyline(GraphicsPath path, float radiusRight, float radiusLeft, 
+            PointF pointRightM, PointF pointLeftM, bool rightPtOnBottom)
         {
-            if (radius <= 0) return;
+            if (radiusRight < 0 || radiusLeft < 0) return;
 
             if (rightPtOnBottom)
             {
-                PointF RightCenter = new PointF(pointRightM.X, pointRightM.Y - radius);
-                PointF LeftCenter = new PointF(pointLeftM.X, pointLeftM.Y + radius);
+                PointF RightCenter = new PointF(pointRightM.X, pointRightM.Y - radiusRight);
+                PointF LeftCenter = new PointF(pointLeftM.X, pointLeftM.Y + radiusLeft);
                 PointF CenterDir = new PointF(LeftCenter.X - RightCenter.X, LeftCenter.Y - RightCenter.Y);
 
-                double centerDegree = -Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
+                double centerDegree = - Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
                 if (CenterDir.X < 0) centerDegree += 180;
 
-                double additionalDegree = Rhino.RhinoMath.ToDegrees(Math.Asin(2 * radius / Math.Sqrt(Math.Pow(CenterDir.X, 2) + Math.Pow(CenterDir.Y, 2))));
+                double additionalDegree = Rhino.RhinoMath.ToDegrees(Math.Asin((radiusRight + radiusLeft) 
+                    / Math.Sqrt(Math.Pow(CenterDir.X, 2) + Math.Pow(CenterDir.Y, 2))));
 
                 float round = (float)(centerDegree + additionalDegree);
 
-                path.AddArc(pointRightM.X - radius, pointRightM.Y - 2 * radius, 2 * radius, 2 * radius, 90, -round);
-                path.AddArc(pointLeftM.X - radius, pointLeftM.Y, 2 * radius, 2 * radius, -90 - round, round);
+                path.AddArc(pointRightM.X - radiusRight, pointRightM.Y - 2 * radiusRight, 2 * radiusRight, 2 * radiusRight, 90, -round);
+                path.AddArc(pointLeftM.X - radiusLeft, pointLeftM.Y, 2 * radiusLeft, 2 * radiusLeft, -90 - round, round);
             }
             else
             {
-                PointF RightCenter = new PointF(pointRightM.X, pointRightM.Y + radius);
-                PointF LeftCenter = new PointF(pointLeftM.X, pointLeftM.Y - radius);
+                PointF RightCenter = new PointF(pointRightM.X, pointRightM.Y + radiusRight);
+                PointF LeftCenter = new PointF(pointLeftM.X, pointLeftM.Y - radiusLeft);
                 PointF CenterDir = new PointF(LeftCenter.X - RightCenter.X, LeftCenter.Y - RightCenter.Y);
 
                 double centerDegree = Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
                 if (CenterDir.X < 0) centerDegree += 180;
 
-                double additionalDegree = Rhino.RhinoMath.ToDegrees(Math.Asin(2 * radius / Math.Sqrt(Math.Pow(CenterDir.X, 2) + Math.Pow(CenterDir.Y, 2))));
+                double additionalDegree = Rhino.RhinoMath.ToDegrees(Math.Asin((radiusRight + radiusLeft)
+                    / Math.Sqrt(Math.Pow(CenterDir.X, 2) + Math.Pow(CenterDir.Y, 2))));
 
                 float round = (float)(centerDegree + additionalDegree);
 
-                path.AddArc(pointRightM.X - radius, pointRightM.Y, 2 * radius, 2 * radius, -90, round);
-                path.AddArc(pointLeftM.X - radius, pointLeftM.Y - 2 * radius, 2 * radius, 2 * radius, 90 + round, -round);
+                path.AddArc(pointRightM.X - radiusRight, pointRightM.Y, 2 * radiusRight, 2 * radiusRight, -90, round);
+                path.AddArc(pointLeftM.X - radiusLeft, pointLeftM.Y - 2 * radiusLeft, 2 * radiusLeft, 2 * radiusLeft, 90 + round, -round);
             }
         }
 
-        private static void ChangeRadiusAndPointM(ref float radius, ref PointF pointRightM, ref PointF pointLeftM,
+        private static void ChangeRadiusAndPointM(ref float radiusRight, ref float radiusLeft, ref PointF pointRightM, ref PointF pointLeftM,
             float distanceRight, float distanceLeft, bool isTrim)
         {
             if (isTrim)
             {
-                //Distance that line end extend added.
-                var extend = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._lineExtend, MenuCreator._lineExtendDefault);
-                float extendedDistanceRight = distanceRight - extend;
-                float extendedDistanceLeft = distanceLeft - extend;
-
                 if (pointLeftM.Y == pointRightM.Y)
                 {
-                    pointRightM = new PointF(pointRightM.X - extendedDistanceRight, pointRightM.Y);
-                    pointLeftM = new PointF(pointLeftM.X + extendedDistanceLeft, pointLeftM.Y);
+                    pointRightM = new PointF(pointRightM.X - distanceRight, pointRightM.Y);
+                    pointLeftM = new PointF(pointLeftM.X + distanceLeft, pointLeftM.Y);
 
-                    radius = Math.Min(radius, GetMaxRadius(pointRightM, pointLeftM));
+                    ChangeRadius(ref radiusRight, ref radiusLeft, pointRightM, pointLeftM);
                 }
                 else
                 {
@@ -256,38 +260,53 @@ namespace WiresRenderer
                     //Get Radius and Shrink by pitch's distance.
                     float tan = (float)Math.Tan(centerDegree / 2);
                     float halflength = (float)Math.Sqrt(Math.Pow(CenterDir.X, 2) + Math.Pow(CenterDir.Y, 2)) / 2;
-                    float shouldRadius = (float)Math.Min(radius, halflength / tan - 0.001f);
-                    float shouldShrink = tan * shouldRadius;
+                    float shouldRadiusRight = (float)Math.Min(radiusRight, halflength / tan - TOLERANCE);
+                    float shouldRadiusLeft = (float)Math.Min(radiusLeft, halflength / tan - TOLERANCE);
+                    float shouldShrinkRight = tan * shouldRadiusRight;
+                    float shouldShrinkLeft = tan * shouldRadiusLeft;
 
 
-                    if (shouldShrink > extendedDistanceRight || shouldShrink > extendedDistanceLeft)
+                    if (shouldShrinkRight > distanceRight || shouldShrinkLeft > distanceLeft)
                     {
-                        pointRightM = new PointF(pointRightM.X - extendedDistanceRight, pointRightM.Y);
-                        pointLeftM = new PointF(pointLeftM.X + extendedDistanceLeft, pointLeftM.Y);
+                        pointRightM = new PointF(pointRightM.X - distanceRight, pointRightM.Y);
+                        pointLeftM = new PointF(pointLeftM.X + distanceLeft, pointLeftM.Y);
 
-                        radius = Math.Min(radius, GetMaxRadius(pointRightM, pointLeftM));
+                        ChangeRadius(ref radiusRight, ref radiusLeft, pointRightM, pointLeftM);
                     }
                     else
                     {
-                        pointRightM = new PointF(pointRightM.X - shouldShrink, pointRightM.Y);
-                        pointLeftM = new PointF(pointLeftM.X + shouldShrink, pointLeftM.Y);
+                        pointRightM = new PointF(pointRightM.X - shouldShrinkRight, pointRightM.Y);
+                        pointLeftM = new PointF(pointLeftM.X + shouldShrinkLeft, pointLeftM.Y);
 
-                        radius = shouldRadius - 0.001f;
+                        radiusRight = shouldRadiusRight - TOLERANCE;
+                        radiusLeft = shouldRadiusLeft - TOLERANCE;
                     }
                 }
             }
             else
             {
-                radius = Math.Min(radius, GetMaxRadius(pointRightM, pointLeftM));
+                ChangeRadius(ref radiusRight, ref radiusLeft, pointRightM, pointLeftM);
             }
         }
 
-        private static float GetMaxRadius(PointF pointRight, PointF pointLeft)
+        private static void ChangeRadius(ref float radiusRight, ref float radiusLeft, PointF pointRightM, PointF pointLeftM)
+        {
+            var radiusAddition = GetMaxRadiusAddition(pointRightM, pointLeftM);
+
+            if (radiusRight + radiusLeft <= radiusAddition) return;
+
+            var ratio = radiusAddition / (radiusRight + radiusLeft);
+
+            radiusRight *= ratio;
+            radiusLeft *= ratio;
+        }
+
+        private static float GetMaxRadiusAddition(PointF pointRight, PointF pointLeft)
         {
             double u = Math.Abs(pointRight.X - pointLeft.X);
             double v = Math.Abs(pointRight.Y - pointLeft.Y);
 
-            return (float)((Math.Pow(u, 2) + Math.Pow(v, 2)) / v / 4) - 0.001f;
+            return (float)((Math.Pow(u, 2) + Math.Pow(v, 2)) / v / 4) * 2 - TOLERANCE;
         }
 
         private static GraphicsPath ConnectPolyline(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
@@ -295,7 +314,7 @@ namespace WiresRenderer
             float distance = Math.Abs(pointB.X - pointA.X) * 
                 (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._polylineMulty, MenuCreator._polylineMultyDefault);
             float radius = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._polylineRadius, MenuCreator._polylineRadiusDefault);
-            return ConnectLine(pointA, pointB, directionA, directionB, distance, distance, radius, true);
+            return ConnectLine(pointA, pointB, directionA, directionB, distance, distance, radius, radius, true);
         }
 
         private float DistanceToWireNew(PointF locus, float radius, PointF source, PointF target)
@@ -312,9 +331,8 @@ namespace WiresRenderer
         }
 
         private static float distance(PointF p, PointF p1)
-        {
-            return (float)Math.Sqrt(Math.Pow(p.X - p1.X, 2) + Math.Pow(p.Y - p1.Y, 2));
-        }
+            => (float)Math.Sqrt(Math.Pow(p.X - p1.X, 2) + Math.Pow(p.Y - p1.Y, 2));
+
         private static float PointToLine(PointF p1, PointF p2, PointF p)
         {
             float a, b, c;
