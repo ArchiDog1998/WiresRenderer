@@ -200,15 +200,14 @@ namespace WiresRenderer
         private static void AddArcOnPolyline(GraphicsPath path, float radiusRight, float radiusLeft, 
             PointF pointRightM, PointF pointLeftM, bool rightPtOnBottom)
         {
-            if (radiusRight < 0 || radiusLeft < 0) return;
-
             if (rightPtOnBottom)
             {
                 PointF RightCenter = new PointF(pointRightM.X, pointRightM.Y - radiusRight);
                 PointF LeftCenter = new PointF(pointLeftM.X, pointLeftM.Y + radiusLeft);
                 PointF CenterDir = new PointF(LeftCenter.X - RightCenter.X, LeftCenter.Y - RightCenter.Y);
 
-                double centerDegree = - Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
+                double centerDegree = CenterDir.X == 0 ? -90
+                    : - Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
                 if (CenterDir.X < 0) centerDegree += 180;
 
                 double additionalDegree = Rhino.RhinoMath.ToDegrees(Math.Asin((radiusRight + radiusLeft) 
@@ -216,8 +215,8 @@ namespace WiresRenderer
 
                 float round = (float)(centerDegree + additionalDegree);
 
-                path.AddArc(pointRightM.X - radiusRight, pointRightM.Y - 2 * radiusRight, 2 * radiusRight, 2 * radiusRight, 90, -round);
-                path.AddArc(pointLeftM.X - radiusLeft, pointLeftM.Y, 2 * radiusLeft, 2 * radiusLeft, -90 - round, round);
+                if (radiusRight > 0) path.AddArc(pointRightM.X - radiusRight, pointRightM.Y - 2 * radiusRight, 2 * radiusRight, 2 * radiusRight, 90, -round);
+                if (radiusLeft > 0) path.AddArc(pointLeftM.X - radiusLeft, pointLeftM.Y, 2 * radiusLeft, 2 * radiusLeft, -90 - round, round);
             }
             else
             {
@@ -225,7 +224,8 @@ namespace WiresRenderer
                 PointF LeftCenter = new PointF(pointLeftM.X, pointLeftM.Y - radiusLeft);
                 PointF CenterDir = new PointF(LeftCenter.X - RightCenter.X, LeftCenter.Y - RightCenter.Y);
 
-                double centerDegree = Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
+                double centerDegree = CenterDir.X == 0 ? 90
+                    : Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
                 if (CenterDir.X < 0) centerDegree += 180;
 
                 double additionalDegree = Rhino.RhinoMath.ToDegrees(Math.Asin((radiusRight + radiusLeft)
@@ -233,22 +233,21 @@ namespace WiresRenderer
 
                 float round = (float)(centerDegree + additionalDegree);
 
-                path.AddArc(pointRightM.X - radiusRight, pointRightM.Y, 2 * radiusRight, 2 * radiusRight, -90, round);
-                path.AddArc(pointLeftM.X - radiusLeft, pointLeftM.Y - 2 * radiusLeft, 2 * radiusLeft, 2 * radiusLeft, 90 + round, -round);
+                if (radiusRight > 0) path.AddArc(pointRightM.X - radiusRight, pointRightM.Y, 2 * radiusRight, 2 * radiusRight, -90, round);
+                if (radiusLeft > 0) path.AddArc(pointLeftM.X - radiusLeft, pointLeftM.Y - 2 * radiusLeft, 2 * radiusLeft, 2 * radiusLeft, 90 + round, -round);
             }
         }
 
         private static void ChangeRadiusAndPointM(ref float radiusRight, ref float radiusLeft, ref PointF pointRightM, ref PointF pointLeftM,
             float distanceRight, float distanceLeft, bool isTrim)
         {
+            //Change the PointM location.
             if (isTrim)
             {
                 if (pointLeftM.Y == pointRightM.Y)
                 {
                     pointRightM = new PointF(pointRightM.X - distanceRight, pointRightM.Y);
                     pointLeftM = new PointF(pointLeftM.X + distanceLeft, pointLeftM.Y);
-
-                    ChangeRadius(ref radiusRight, ref radiusLeft, pointRightM, pointLeftM);
                 }
                 else
                 {
@@ -267,14 +266,10 @@ namespace WiresRenderer
 
                     pointRightM = new PointF(pointRightM.X - distanceRight, pointRightM.Y);
                     pointLeftM = new PointF(pointLeftM.X + distanceLeft, pointLeftM.Y);
-
-                    ChangeRadius(ref radiusRight, ref radiusLeft, pointRightM, pointLeftM);
                 }
             }
-            else
-            {
-                ChangeRadius(ref radiusRight, ref radiusLeft, pointRightM, pointLeftM);
-            }
+
+            ChangeRadius(ref radiusRight, ref radiusLeft, pointRightM, pointLeftM);
         }
 
         private static void ChangeRadius(ref float radiusRight, ref float radiusLeft, PointF pointRightM, PointF pointLeftM)
@@ -301,6 +296,8 @@ namespace WiresRenderer
         {
             float distance = Math.Abs(pointB.X - pointA.X) * 
                 (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._polylineMulty, MenuCreator._polylineMultyDefault);
+            distance = Math.Max(distance, (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._polylineExtend, MenuCreator._polylineExtendDefault));
+
             float radius = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._polylineRadius, MenuCreator._polylineRadiusDefault);
             return ConnectLine(pointA, pointB, directionA, directionB, distance, distance, radius, radius, true);
         }
