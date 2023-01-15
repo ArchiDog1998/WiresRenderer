@@ -20,6 +20,16 @@ namespace WiresRenderer
         internal static readonly string _wiretype = PREFIX + "WireType";
         internal static readonly Wire_Types _wiretypeDefault = Wire_Types.Electric_Wire;
 
+        internal static readonly string _bezierRatioX = PREFIX + "BezierRatioX";
+        internal static readonly double _bezierRatioXDefault = 0.5;
+
+        internal static readonly string _bezierRatioY = PREFIX + "BezierRatioY";
+        internal static readonly double _bezierRatioYDefault = 0.75;
+
+        internal static readonly string _bezierLength = PREFIX + "BezierExtend";
+        internal static readonly double _bezierLengthDefault = 100;
+
+
         internal static readonly string _lineExtend = PREFIX + "LineExtend";
         internal static readonly double _lineExtendDefault = 3;
 
@@ -122,79 +132,68 @@ namespace WiresRenderer
             ToolStripMenuItem major = new ToolStripMenuItem("Wire Types") { ToolTipText = "Provide a list of wire types" };
             major.DropDownItems.AddRange(new ToolStripItem[]
             {
-                CreateBezierMenu(),CreateLineMenu(), CreatePolylineMenu(), CreateElectricMenu(),
+                CreateRatioBezierMenu(), CreateExtendBezierMenu(), CreateLineMenu(), CreatePolylineMenu(), CreateElectricMenu(),
             });
 
             return major;
         }
 
-        private static ToolStripMenuItem CreateBezierMenu()
-        {
-            bool isOn = Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Bezier_Wire;
-            ToolStripMenuItem major = new ToolStripMenuItem("Bezier Wire", Properties.Resources.BezierWireIcons_24)
+        private static ToolStripMenuItem CreateRatioBezierMenu()
+            => CreateWireTypeItem(Wire_Types.RatioBezier_Wire, "Bezier Ratio Wire", Properties.Resources.BezierWireIcons_24, (major) =>
             {
-                Tag = Wire_Types.Bezier_Wire,
-                Checked = isOn,
-            };
+                CreateNumberBox(major, "Bezier X Ratio", _bezierRatioX, _bezierRatioXDefault, 1, 0);
+                GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+                CreateNumberBox(major, "Bezier Y Ratio", _bezierRatioY, _bezierRatioYDefault, 1, 0);
+            });
 
-            major.Click += WireType_Click;
-
-            return major;
-        }
+        private static ToolStripMenuItem CreateExtendBezierMenu()
+            => CreateWireTypeItem(Wire_Types.LengthBezier_Wire, "Bezier Length Wire", Properties.Resources.BezierWireIcons_24, (major) =>
+            {
+                CreateNumberBox(major, "Bezier Length", _bezierLength, _bezierLengthDefault, 500, 0);
+            });
 
         private static ToolStripMenuItem CreateLineMenu()
-        {
-            bool isOn = Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Line_Wire;
-            ToolStripMenuItem major = new ToolStripMenuItem("Line Wire", Properties.Resources.LineWireIcons_24)
+            => CreateWireTypeItem(Wire_Types.Line_Wire, "Line Wire", Properties.Resources.LineWireIcons_24, (major) =>
             {
-                Tag = Wire_Types.Line_Wire,
-                Checked = isOn,
-            };
-
-            CreateNumberBox(major, "End Extend Length", _lineExtend, _lineExtendDefault, 100, 0);
-            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
-            CreateNumberBox(major, "Corner Radius", _lineRadius, _lineRadiusDefault, 100, 0);
-
-            major.Click += WireType_Click;
-            return major;
-        }
+                CreateNumberBox(major, "End Extend Length", _lineExtend, _lineExtendDefault, 100, 0);
+                GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+                CreateNumberBox(major, "Corner Radius", _lineRadius, _lineRadiusDefault, 100, 0);
+            });
 
         private static ToolStripMenuItem CreatePolylineMenu()
-        {
-            bool isOn = Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Polyline_Wire;
-            ToolStripMenuItem major = new ToolStripMenuItem("Polyline Wire", Properties.Resources.PolylineWireIcons_24)
+            => CreateWireTypeItem(Wire_Types.Polyline_Wire, "Polyline Wire", Properties.Resources.PolylineWireIcons_24, (major) =>
             {
-                Tag = Wire_Types.Polyline_Wire,
-                Checked = isOn,
-            };
+                CreateNumberBox(major, "End Extend Length", _polylineExtend, _polylineExtendDefault, 100, 0);
+                GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+                CreateNumberBox(major, "Multiple of Corner Pitch", _polylineMulty, _polylineMultyDefault, 1, 0);
+                GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+                CreateNumberBox(major, "Corner Radius", _polylineRadius, _polylineRadiusDefault, 100, 0);
+            });
 
-            CreateNumberBox(major, "End Extend Length", _polylineExtend, _polylineExtendDefault, 100, 0);
-            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
-            CreateNumberBox(major, "Multiple of Corner Pitch", _polylineMulty, _polylineMultyDefault, 1, 0);
-            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
-            CreateNumberBox(major, "Corner Radius", _polylineRadius, _polylineRadiusDefault, 100, 0);
-
-            major.Click += WireType_Click;
-            return major;
-        }
         private static ToolStripMenuItem CreateElectricMenu()
-        {
-            bool isOn = Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)Wire_Types.Electric_Wire;
-            ToolStripMenuItem major = new ToolStripMenuItem("Electric Wire", Properties.Resources.ElectricWireIcons_24)
+            => CreateWireTypeItem(Wire_Types.Electric_Wire, "Electric Wire", Properties.Resources.ElectricWireIcons_24, (major) =>
             {
-                Tag = Wire_Types.Electric_Wire,
+                CreateNumberBox(major, "End Extend Length", _electricExtend, _electricExtendDefault, 100, 0);
+                GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+                CreateNumberBox(major, "Multiple of Corner Pitch", _electricMulty, _electricMultyDefault, 1, 0);
+                GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+                CreateNumberBox(major, "Corner Radius 1", _electricRadius1, _electricRadius1Default, 1000, 0);
+                GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
+                CreateNumberBox(major, "Corner Radius 2", _electricRadius2, _electricRadius2Default, 100, 0);
+            });
+
+        private static ToolStripMenuItem CreateWireTypeItem(Wire_Types type, string name, Image icon, Action<ToolStripMenuItem> addItems)
+        {
+            bool isOn = Instances.Settings.GetValue(_wiretype, (int)_wiretypeDefault) == (int)type;
+            ToolStripMenuItem major = new ToolStripMenuItem(name, icon)
+            {
+                Tag = type,
                 Checked = isOn,
             };
 
-            CreateNumberBox(major, "End Extend Length", _electricExtend, _electricExtendDefault, 100, 0);
-            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
-            CreateNumberBox(major, "Multiple of Corner Pitch", _electricMulty, _electricMultyDefault, 1, 0);
-            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
-            CreateNumberBox(major, "Corner Radius 1", _electricRadius1, _electricRadius1Default, 1000, 0);
-            GH_DocumentObject.Menu_AppendSeparator(major.DropDown);
-            CreateNumberBox(major, "Corner Radius 2", _electricRadius2, _electricRadius2Default, 100, 0);
-
             major.Click += WireType_Click;
+
+            addItems?.Invoke(major);
             return major;
         }
 

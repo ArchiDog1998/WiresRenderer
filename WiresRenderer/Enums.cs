@@ -8,7 +8,8 @@ namespace WiresRenderer
 {
     public enum Wire_Types
     {
-        Bezier_Wire,
+        RatioBezier_Wire,
+        LengthBezier_Wire,
         Line_Wire,
         Polyline_Wire,
         Electric_Wire,

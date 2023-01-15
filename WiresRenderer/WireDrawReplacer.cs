@@ -62,8 +62,12 @@ namespace WiresRenderer
                     graphicsPath.AddLine(pointB, pointA);
                     break;
 
-                case Wire_Types.Bezier_Wire:
-                    graphicsPath = ConnectionPath(pointA, pointB, directionA, directionB);
+                case Wire_Types.RatioBezier_Wire:
+                    graphicsPath = ConnectRatioBezier(pointA, pointB, directionA, directionB);
+                    break;
+
+                case Wire_Types.LengthBezier_Wire:
+                    graphicsPath = ConnectLengthBezier(pointA, pointB, directionA, directionB);
                     break;
 
                 case Wire_Types.Line_Wire:
@@ -94,6 +98,51 @@ namespace WiresRenderer
             pen.Width = pen.Width * (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._wireWidth, MenuCreator._wireWidthDefault);
             return pen;
         }
+
+        private static GraphicsPath ConnectRatioBezier(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
+            => ConnectPathDirection(pointA, pointB, directionA, directionB, (pointRight, pointLeft) =>
+            {
+                var ratioX = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._bezierRatioX, MenuCreator._bezierRatioXDefault);
+                var ratioY = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._bezierRatioY, MenuCreator._bezierRatioYDefault);
+
+                var movement = Math.Max(ratioX * Math.Abs(pointRight.X - pointLeft.X), ratioY * Math.Abs(pointRight.Y - pointLeft.Y));
+
+                var path = new GraphicsPath();
+                path.AddBezier(pointRight, new PointF(pointRight.X + movement, pointRight.Y), new PointF(pointLeft.X - movement, pointLeft.Y),  pointLeft);
+                return path;
+            });
+
+        private static GraphicsPath ConnectLengthBezier(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
+            => ConnectPathDirection(pointA, pointB, directionA, directionB, (pointRight, pointLeft) =>
+            {
+                var movement = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._bezierLength, MenuCreator._bezierLengthDefault);
+
+                var path = new GraphicsPath();
+                path.AddBezier(pointRight, new PointF(pointRight.X + movement, pointRight.Y), new PointF(pointLeft.X - movement, pointLeft.Y), pointLeft);
+                return path;
+            });
+
+        private static GraphicsPath ConnectPathDirection(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB, Func<PointF, PointF, GraphicsPath> getBezier)
+        {
+            PointF pointRight, pointLeft;
+
+            if (directionA != GH_WireDirection.left)
+            {
+                pointRight = pointA;
+                pointLeft = pointB;
+            }
+            else
+            {
+                pointRight = pointB;
+                pointLeft = pointA;
+            }
+
+            var path = getBezier.Invoke(pointRight, pointLeft);
+
+            if (directionA != GH_WireDirection.left) path.Reverse();
+            return path;
+        }
+
 
         private static GraphicsPath ConnectElectric(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
         {
@@ -127,7 +176,8 @@ namespace WiresRenderer
 
             var radius1 = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._electricRadius1, MenuCreator._electricRadius1Default);
             var radius2 = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._electricRadius2, MenuCreator._electricRadius2Default);
-            var path = ConnectLine(pointRight, pointLeft, longExtend, shortExtend, radius1, radius2, true);
+
+            var path = ConnectLine(pointRight, pointLeft, longExtend, shortExtend, radius1, radius2, true, true);
 
             if (directionA != GH_WireDirection.left) path.Reverse();
             return path;
@@ -157,14 +207,14 @@ namespace WiresRenderer
                 radiusLeft = radiusA;
             }
 
-            var path = ConnectLine(pointRight, pointLeft, distanceRight, distanceLeft, radiusRight, radiusLeft, isTrim);
+            var path = ConnectLine(pointRight, pointLeft, distanceRight, distanceLeft, radiusRight, radiusLeft, isTrim, false);
 
             if (directionA != GH_WireDirection.left) path.Reverse();
             return path;
         }
 
         private static GraphicsPath ConnectLine(PointF pointRight, PointF pointLeft, float distanceRight, float distanceLeft, 
-            float radiusRight, float radiusLeft, bool isTrim)
+            float radiusRight, float radiusLeft, bool isTrim, bool adjustRightRadius)
         {
             GraphicsPath path = new GraphicsPath();
 
@@ -184,7 +234,8 @@ namespace WiresRenderer
                 }
                 else
                 {
-                    ChangeRadiusAndPointM(ref radiusRight, ref radiusLeft, ref pointRightM, ref pointLeftM, distanceRight, distanceRight, isTrim);
+                    ChangeRadiusAndPointM(ref radiusRight, ref radiusLeft, ref pointRightM, ref pointLeftM, 
+                        pointRight, pointLeft, distanceRight, distanceRight, isTrim, adjustRightRadius);
 
                     path.AddLine(pointRight, pointRightM);
 
@@ -206,7 +257,7 @@ namespace WiresRenderer
                 PointF LeftCenter = new PointF(pointLeftM.X, pointLeftM.Y + radiusLeft);
                 PointF CenterDir = new PointF(LeftCenter.X - RightCenter.X, LeftCenter.Y - RightCenter.Y);
 
-                double centerDegree = CenterDir.X == 0 ? -90
+                double centerDegree = CenterDir.X == 0 ? 90
                     : - Rhino.RhinoMath.ToDegrees(Math.Atan(CenterDir.Y / CenterDir.X));
                 if (CenterDir.X < 0) centerDegree += 180;
 
@@ -239,7 +290,7 @@ namespace WiresRenderer
         }
 
         private static void ChangeRadiusAndPointM(ref float radiusRight, ref float radiusLeft, ref PointF pointRightM, ref PointF pointLeftM,
-            float distanceRight, float distanceLeft, bool isTrim)
+            PointF pointRight, PointF pointLeft, float distanceRight, float distanceLeft, bool isTrim, bool adjustRightRadius)
         {
             //Change the PointM location.
             if (isTrim)
@@ -267,6 +318,13 @@ namespace WiresRenderer
                     pointRightM = new PointF(pointRightM.X - distanceRight, pointRightM.Y);
                     pointLeftM = new PointF(pointLeftM.X + distanceLeft, pointLeftM.Y);
                 }
+            }
+
+            if (pointRightM.X < pointRight.X) pointRightM = pointRight;
+            if (pointLeftM.X > pointLeft.X) pointLeftM = pointLeft;
+            if (adjustRightRadius)
+            {
+                radiusRight = Math.Min(radiusRight, Math.Max(radiusLeft, pointLeftM.X - pointRightM.X - radiusLeft));
             }
 
             ChangeRadius(ref radiusRight, ref radiusLeft, pointRightM, pointLeftM);
