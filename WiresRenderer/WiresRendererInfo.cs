@@ -26,7 +26,7 @@ namespace WiresRenderer
         //Return a string representing your preferred contact details.
         public override string AuthorContact => "1123993881@qq.com";
 
-        public override string Version => "1.3.4";
+        public override string Version => "1.3.5";
     }
 
     public class SuperHelperAssemblyPriority : GH_AssemblyPriority
