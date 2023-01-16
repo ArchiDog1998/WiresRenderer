@@ -46,7 +46,7 @@ namespace WiresRenderer
         internal static readonly double _polylineRadiusDefault = 12;
 
         internal static readonly string _electricExtend = PREFIX + "ElectricExtend";
-        internal static readonly double _electricExtendDefault = 10;
+        internal static readonly double _electricExtendDefault = 5;
 
         internal static readonly string _electricMulty = PREFIX + "ElectricMulty";
         internal static readonly double _electricMultyDefault = 1;

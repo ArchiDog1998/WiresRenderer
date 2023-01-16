@@ -356,7 +356,7 @@ namespace WiresRenderer
 
         private static GraphicsPath ConnectPolyline(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
         {
-            float distance = Math.Abs(pointB.X - pointA.X) * 
+            float distance = (directionA != GH_WireDirection.left ? pointB.X - pointA.X : pointA.X - pointB.X) * 
                 (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._polylineMulty, MenuCreator._polylineMultyDefault);
             distance = Math.Max(distance, (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._polylineExtend, MenuCreator._polylineExtendDefault));
 
