@@ -235,7 +235,7 @@ namespace WiresRenderer
                 else
                 {
                     ChangeRadiusAndPointM(ref radiusRight, ref radiusLeft, ref pointRightM, ref pointLeftM, 
-                        pointRight, pointLeft, distanceRight, distanceRight, isTrim, adjustRightRadius);
+                        pointRight, pointLeft, distanceRight, distanceLeft, isTrim, adjustRightRadius);
 
                     path.AddLine(pointRight, pointRightM);
 
@@ -312,16 +312,20 @@ namespace WiresRenderer
                     float shouldShrinkRight = tan * radiusRight;
                     float shouldShrinkLeft = tan * radiusLeft;
 
-                    distanceRight = Math.Min(shouldShrinkRight, distanceRight);
-                    distanceLeft = Math.Min(shouldShrinkLeft, distanceLeft);
-
-                    pointRightM = new PointF(pointRightM.X - distanceRight, pointRightM.Y);
-                    pointLeftM = new PointF(pointLeftM.X + distanceLeft, pointLeftM.Y);
+                    pointRightM = new PointF(pointRightM.X - shouldShrinkRight, pointRightM.Y);
+                    pointLeftM = new PointF(pointLeftM.X + shouldShrinkLeft, pointLeftM.Y);
                 }
             }
 
-            if (pointRightM.X < pointRight.X) pointRightM = pointRight;
-            if (pointLeftM.X > pointLeft.X) pointLeftM = pointLeft;
+            if (pointRightM.X < pointRight.X + distanceRight)
+            {
+                pointRightM = new PointF(pointRight.X + distanceRight, pointRight.Y);
+            }
+            if (pointLeftM.X > pointLeft.X - distanceLeft)
+            {
+                pointLeftM = new PointF(pointLeft.X - distanceLeft, pointLeft.Y);
+            }
+
             if (adjustRightRadius)
             {
                 radiusRight = Math.Min(radiusRight, Math.Max(radiusLeft, pointLeftM.X - pointRightM.X - radiusLeft));
