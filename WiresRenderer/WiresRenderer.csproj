@@ -2,7 +2,7 @@
 	
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
-    <Version>1.3.6</Version>
+    <Version>1.3.7</Version>
     <Title>WiresRenderer</Title>
     <Description>Change the wire type of the grasshopper.</Description>
     <TargetExt>.gha</TargetExt>
