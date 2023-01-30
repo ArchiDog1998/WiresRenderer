@@ -145,6 +145,8 @@ namespace WiresRenderer
                 return ConnectPolylineTrim(pointRight, pointLeft, distance, distance, extend, extend, radius, radius, false);
             });
 
+        private static float FromRatioToTan(float ratio) => (float)Math.Tan((Math.PI / 2 - Math.Atan(ratio)) / 2);
+
         private static GraphicsPath ConnectElectric(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
             => ConnectPathDirection(pointA, pointB, directionA, directionB, (pointRight, pointLeft) =>
             {
@@ -153,11 +155,8 @@ namespace WiresRenderer
                 var radiusLeft = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._electricRadius2, MenuCreator._electricRadius2Default);
 
                 var multy = (float)Grasshopper.Instances.Settings.GetValue(MenuCreator._electricMulty, MenuCreator._electricMultyDefault);
-                var alpha = Math.Atan(multy);
 
-                var half = (Math.PI/ 2 - alpha) /2;
-                var distanceLeft = (float)Math.Tan(half) * radiusLeft;
-
+                var distanceLeft = FromRatioToTan(multy) * radiusLeft + extend;
 
                 float distancRight;
                 if (pointLeft.X <= pointRight.X)
@@ -316,9 +315,8 @@ namespace WiresRenderer
 
         private static void ChangePointM(ref PointF pointRightM, ref PointF pointLeftM, float radiusRight, float radiusLeft)
         {
-            double centerDegree = Math.Abs(Math.Atan(pointLeftM.Y - pointRightM.Y / pointLeftM.X - pointRightM.X));
-
-            float tan = (float)Math.Tan(centerDegree / 2);
+            var tanOrg = (pointLeftM.X - pointRightM.X) / (pointLeftM.Y - pointRightM.Y);
+            float tan = FromRatioToTan(tanOrg);
             float shouldShrinkRight = tan * radiusRight;
             float shouldShrinkLeft = tan * radiusLeft;
 
