@@ -145,7 +145,7 @@ namespace WiresRenderer
                 return ConnectPolylineTrim(pointRight, pointLeft, distance, distance, extend, extend, radius, radius, false);
             });
 
-        private static float FromRatioToTan(float ratio) => (float)Math.Tan((Math.PI / 2 - Math.Atan(ratio)) / 2);
+        private static float FromRatioToTan(float ratio) => (float)Math.Tan((Math.PI / 2 - Math.Atan(Math.Abs(ratio))) / 2);
 
         private static GraphicsPath ConnectElectric(PointF pointA, PointF pointB, GH_WireDirection directionA, GH_WireDirection directionB)
             => ConnectPathDirection(pointA, pointB, directionA, directionB, (pointRight, pointLeft) =>
