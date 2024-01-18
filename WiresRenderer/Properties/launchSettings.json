@@ -2,11 +2,7 @@
   "profiles": {
     "Work": {
       "commandName": "Executable",
-      "executablePath": "C:\\Program Files\\Rhino 7\\System\\Rhino.exe"
-    },
-    "WiresRenderer": {
-      "commandName": "Executable",
-      "executablePath": "E:\\Software\\Rhino 7\\System\\Rhino.exe"
+      "executablePath": "C:\\Program Files\\Rhino 8\\System\\Rhino.exe"
     }
   }
 }
