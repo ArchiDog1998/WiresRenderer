@@ -11,6 +11,7 @@ using Grasshopper.Kernel.Special;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
+using static Grasshopper.Rhinoceros.Display.Params.Param_ModelView;
 
 namespace WiresRenderer;
 
@@ -97,14 +98,35 @@ partial class SimpleAssemblyPriority : IDisposable
         _selectA = GH_Skin.wire_selected_a;
         _selectB = GH_Skin.wire_selected_b;
 
-        GH_Skin.wire_default = GH_Skin.wire_empty = GH_Skin.wire_selected_a = GH_Skin.wire_selected_b = Color.Transparent;
+        GH_Skin.wire_default = GH_Skin.wire_empty = GH_Skin.wire_selected_a = GH_Skin.wire_selected_b = Color.FromArgb(0, GH_Skin.canvas_back);
     }
 
     private static void RenderAllInputs(GH_Painter painter, IGH_Param param)
     {
-        foreach(var input in param.Sources)
+        bool flag = false;
+        if (param.Attributes.Selected)
         {
-            WireDrawer.DrawConnection(painter, input, param);
+            flag = true;
+        }
+        else if (param.WireDisplay != 0)
+        {
+            foreach (IGH_Param source in param.Sources)
+            {
+                if (source.Attributes.GetTopLevel.Selected)
+                {
+                    flag = true;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            flag = true;
+        }
+
+        foreach (var input in param.Sources)
+        {
+            WireDrawer.DrawConnection(painter, input, param, flag);
         }
     }
 

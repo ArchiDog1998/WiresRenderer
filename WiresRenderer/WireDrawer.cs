@@ -1,4 +1,5 @@
 ﻿using Grasshopper;
+using Grasshopper.GUI;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using System;
@@ -6,34 +7,69 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Reflection;
+using static Grasshopper.Rhinoceros.Display.Params.Param_ModelView;
+using static System.ComponentModel.Design.ObjectSelectorEditor;
 
 namespace WiresRenderer;
 
-internal class WireDrawer : GH_Painter
+internal static class WireDrawer
 {
     private static readonly MethodInfo _generatePen = typeof(GH_Painter).GetRuntimeMethods().First(m => m.Name.Contains("GenerateWirePen"));
+    private static readonly PropertyInfo _graphic = typeof(GH_Painter).GetRuntimeProperties().First(m => m.Name.Contains("Graphics"));
     const float TOLERANCE = 0.001f;
 
-    protected WireDrawer(GH_Canvas owner) : base(owner)
-    {
-    }
-
-    public static void DrawConnection(GH_Painter painter, IGH_Param outputParam, IGH_Param inputParam)
+    public static void DrawConnection(GH_Painter painter, IGH_Param outputParam, IGH_Param inputParam, bool flag)
     {
         var pointRight = outputParam.Attributes.OutputGrip;
         var pointLeft = inputParam.Attributes.InputGrip;
 
         if (!painter.ConnectionVisible(pointRight, pointLeft)) return;
 
-        using var graphicsPath = GetPath(outputParam, inputParam);
-        using var pen = GetPen(painter, pointRight, pointLeft, outputParam.Attributes.Selected, inputParam.Attributes.Selected,
-            CentralSettings.CanvasFancyWires ? GH_Painter.DetermineWireType(outputParam.VolatileData) : GH_WireType.generic);
-        try
+        var type = inputParam.WireDisplay;
+
+        if (flag || type == GH_ParamWireDisplay.faint)
         {
-            Instances.ActiveCanvas.Graphics.DrawPath(pen, graphicsPath);
+            using var graphicsPath = GetPath(outputParam, inputParam);
+            using var pen = GetPen(painter, pointRight, pointLeft, outputParam.Attributes.Selected, inputParam.Attributes.Selected,
+                type == GH_ParamWireDisplay.faint && !flag ? GH_WireType.faint :
+                CentralSettings.CanvasFancyWires ? GH_Painter.DetermineWireType(outputParam.VolatileData) : GH_WireType.generic);
+            try
+            {
+                Instances.ActiveCanvas.Graphics.DrawPath(pen, graphicsPath);
+                return;
+            }
+            catch
+            {
+            }
         }
-        catch
+
+        if (type == GH_ParamWireDisplay.hidden)
         {
+            var graphic = _graphic.GetValue(painter) as Graphics;
+            float num = graphic.Transform.Elements[0];
+            if (num > 0.55f)
+            {
+                var point = GH_Convert.ToPoint(pointLeft);
+                var alpha = GH_GraphicsUtil.BlendInteger(0.5, 1.0, 0, 80, num);
+                int num2 = 0;
+                do
+                {
+                    int num3 = 6 + 3 * num2;
+                    var rect = new Rectangle(point.X - num3, point.Y - num3, 2 * num3, 2 * num3);
+                    var linearGradientBrush = new LinearGradientBrush(rect, Color.FromArgb(0, 0, 0, 0), Color.FromArgb(alpha, 0, 0, 0), LinearGradientMode.Vertical)
+                    {
+                        WrapMode = WrapMode.TileFlipXY,
+                    };
+                    linearGradientBrush.SetSigmaBellShape(0.5f);
+                    using (var p = new Pen(linearGradientBrush, 1f))
+                    {
+                        graphic.DrawEllipse(p, rect);
+                    }
+                    linearGradientBrush.Dispose();
+                    num2++;
+                }
+                while (num2 <= 3);
+            }
         }
     }
 

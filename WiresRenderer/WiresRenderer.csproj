@@ -13,8 +13,8 @@
 	
   <ItemGroup>
     <PackageReference Include="Grasshopper" Version="8.0.*" />
-    <PackageReference Include="SimpleGrasshopper" Version="1.4.9" />
-	<EmbeddedResource Include="Icons/*.png"/>
+    <PackageReference Include="SimpleGrasshopper" Version="1.5.3" />
+	<EmbeddedResource Include="Icons/*.png" />
   </ItemGroup>
   
   <PropertyGroup Condition="$(Configuration) == 'Debug' AND $([MSBuild]::IsOSPlatform(Windows))">
