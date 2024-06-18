@@ -2,18 +2,20 @@
 	
   <PropertyGroup>
     <TargetFramework>net7.0-windows</TargetFramework>
-    <Version>1.4.1</Version>
+    <Version>1.4.2</Version>
     <Title>WiresRenderer</Title>
     <Description>Change the wire type of the grasshopper.</Description>
     <TargetExt>.gha</TargetExt>
     <UseWindowsForms>true</UseWindowsForms>
     <Authors>秋水</Authors>
 	<LangVersion>latest</LangVersion>
+	  <Nullable>enable</Nullable>
   </PropertyGroup>
 	
   <ItemGroup>
     <PackageReference Include="Grasshopper" Version="8.0.*" />
-    <PackageReference Include="SimpleGrasshopper" Version="1.5.3" />
+    <PackageReference Include="Lib.Harmony" Version="2.3.3" />
+    <PackageReference Include="SimpleGrasshopper" Version="1.8.2" />
 	<EmbeddedResource Include="Icons/*.png" />
   </ItemGroup>
   
