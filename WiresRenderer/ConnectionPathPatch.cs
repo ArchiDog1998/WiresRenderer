@@ -12,7 +12,15 @@ internal static class ConnectionPathPatch
 
     static bool Prefix(out GraphicsPath __result, PointF pointA, PointF pointB, GH_WireDirection directionA)
     {
-        __result = directionA == GH_WireDirection.right ? GetPath(pointA, pointB) : GetPath(pointB, pointA);
+        if (directionA == GH_WireDirection.right)
+        {
+            __result = GetPath(pointA, pointB);
+            __result.Reverse();
+        }
+        else
+        {
+            __result = GetPath(pointB, pointA);
+        }
         return false;
     }
 
