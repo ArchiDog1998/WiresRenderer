@@ -3,7 +3,7 @@ using HarmonyLib;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-namespace WiresRenderer;
+namespace WiresRenderer.Patch;
 
 [HarmonyPatch(typeof(GH_Painter), nameof(GH_Painter.ConnectionPath))]
 internal static class ConnectionPathPatch
@@ -258,11 +258,11 @@ internal static class ConnectionPathPatch
     {
         if (pointRightM.X < pointRight.X + distanceRightLeast)
         {
-            pointRightM = new (pointRight.X + distanceRightLeast, pointRight.Y);
+            pointRightM = new(pointRight.X + distanceRightLeast, pointRight.Y);
         }
         if (pointLeftM.X > pointLeft.X - distanceLeftLeast)
         {
-            pointLeftM = new (pointLeft.X - distanceLeftLeast, pointLeft.Y);
+            pointLeftM = new(pointLeft.X - distanceLeftLeast, pointLeft.Y);
         }
     }
 

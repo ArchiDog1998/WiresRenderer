@@ -2,10 +2,9 @@
 using HarmonyLib;
 using System.Drawing;
 
-namespace WiresRenderer;
+namespace WiresRenderer.Patch;
 
 [HarmonyPatch(typeof(GH_Painter), "GenerateWirePen")]
-
 internal class GeneratePenPatch
 {
     static void Postfix(ref Pen __result)

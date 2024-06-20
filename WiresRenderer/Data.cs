@@ -88,4 +88,15 @@ internal static partial class Data
     [Range(0.001, 10, 3)]
     [Setting, Config("Wire Width", section: 2)]
     private static readonly float _wireWidth = 1;
+
+    [Setting, Config("Jump Types", section: 3)]
+    private static readonly JumpType _jumptype = JumpType.TwoObjects;
+
+    [Range(0, 10, 3)]
+    [Setting, Config("Jump Time", section: 3)]
+    private static readonly float _jumpTime = 0.5f;
+
+    [Range(0, 10, 3)]
+    [Setting, Config("Wait Time", section: 3)]
+    private static readonly float _waitTime = 0.5f;
 }
