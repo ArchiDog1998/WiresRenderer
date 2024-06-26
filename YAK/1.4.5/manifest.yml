@@ -1,0 +1,25 @@
+---
+name: WiresRenderer
+version: 1.4.5
+authors:
+- 秋水
+description: > 
+  Provide two additional wire type called line wire type and polyline wire type. Also it can change wire's width and colors.
+  
+  
+  And you can jump on wires on the param's right click menu.
+  
+  
+  Fixed faint and hidden drawing.
+  
+  
+url: https://www.food4rhino.com/en/app/wiresrenderer
+keywords:
+- wire
+- connect
+- line
+- type
+- thickness
+- width
+icon_url:  https://raw.githubusercontent.com/ArchiDog1998/WiresRenderer/master/WiresRendererIcons_256.png
+

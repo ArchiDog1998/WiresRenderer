@@ -25,7 +25,7 @@ public class WiresRendererInfo : GH_AssemblyInfo
     //Return a string representing your preferred contact details.
     public override string AuthorContact => "1123993881@qq.com";
 
-    public override string Version => "1.4.2";
+    public override string Version => "1.4.5";
 }
 
 partial class SimpleAssemblyPriority : IDisposable
