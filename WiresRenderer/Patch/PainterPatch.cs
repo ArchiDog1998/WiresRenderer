@@ -5,11 +5,18 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 namespace WiresRenderer.Patch;
 
-[HarmonyPatch(typeof(GH_Painter), nameof(GH_Painter.ConnectionPath))]
-internal static class ConnectionPathPatch
+[HarmonyPatch(typeof(GH_Painter))]
+internal static class PainterPatch
 {
     const float TOLERANCE = 0.001f;
 
+    [HarmonyPatch("GenerateWirePen")]
+    static void Postfix(ref Pen __result)
+    {
+        __result.Width *= Data.WireWidth;
+    }
+
+    [HarmonyPatch(nameof(GH_Painter.ConnectionPath))]
     static bool Prefix(out GraphicsPath __result, PointF pointA, PointF pointB, GH_WireDirection directionA)
     {
         if (directionA == GH_WireDirection.right)

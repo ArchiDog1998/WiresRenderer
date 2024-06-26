@@ -36,7 +36,7 @@ partial class SimpleAssemblyPriority : IDisposable
     {
         base.DoWithEditor(editor);
 
-        _harmony = new Harmony("grasshopper.patch");
+        _harmony = new Harmony("grasshopper.WiresRenderer");
         _harmony.PatchAll();
     }
 
